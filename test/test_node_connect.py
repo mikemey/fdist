@@ -1,8 +1,13 @@
+import socket
 from time import sleep
 
 from node_connect import NodeConnect
 from signals import SYSTEM_SHUTDOWN, PEER_UPDATE
 from test import LogTestCase
+
+
+def local_ip():
+    return str(socket.gethostbyname(socket.gethostname()))
 
 
 class TestNodeConnect(LogTestCase):
@@ -15,11 +20,24 @@ class TestNodeConnect(LogTestCase):
         sleep(0.5)
         NodeConnect(6501, 6601)
 
-        PEER_UPDATE.connect(update_callback)
+        collector = PeerCollector()
+        PEER_UPDATE.connect(collector.matches_nodes)
+        sleep(3)
+
+        self.assertTrue(collector.has_node(local_ip() + '-6600'))
+        self.assertTrue(collector.has_node(local_ip() + '-6601'))
 
 
-def update_callback(sender, **kwargs):
-    print 'received:', str(kwargs['peers'])
+class PeerCollector:
+    def __init__(self):
+        pass
+
+    def matches_nodes(self, sender, **kwargs):
+        print 'TEST received:', str(kwargs['peers'])
+
+    def has_node(self, node):
+        print node
+        return False
 
 #
 # sleep(1)

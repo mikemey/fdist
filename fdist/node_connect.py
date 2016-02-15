@@ -1,7 +1,7 @@
 import logging
-import threading
-from socket import *
-from thread import *
+import socket
+from _socket import timeout
+from threading import Thread
 from time import sleep
 
 from signals import SYSTEM_SHUTDOWN
@@ -12,24 +12,31 @@ class NodeConnect:
         self.port = broadcast_port
 
         name = 'NC_' + str(self.port)
-        start_new_thread(send_broadcast, (name, broadcast_port, fe_port, broadcast_interval,))
-        start_new_thread(receive_broadcast, (fe_port,), name='BC_RECEIVER')
+        self.setup_broadcaster(name, broadcast_port, broadcast_interval, fe_port)
+        BroadcastReceiver(name + "_RB", broadcast_port).start()
+
+    @staticmethod
+    def setup_broadcaster(name, broadcast_port, broadcast_interval, fe_port):
+        local_address = "%s-%s" % (
+            socket.gethostbyname(socket.gethostname()),
+            str(fe_port))
+        ScheduledBroadcast(name + "_BC", local_address, broadcast_port, broadcast_interval).start()
 
 
-def send_broadast(name, broadcast_port, fe_port,broadcast_interval):
-    running = True
-    local_address = "%s-%s" % (
-        socket.gethostbyname(socket.gethostname()),
-        str(fe_port))
+class ScheduledBroadcast(Thread):
+    def __init__(self, name, message, broadcast_port, broadcast_interval):
+        Thread.__init__(self, name=name)
+        self.message = message
+        self.broadcast_port = broadcast_port
+        self.broadcast_interval = broadcast_interval
 
-    socket = bc_socket()
+        self.running = True
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        SYSTEM_SHUTDOWN.connect(self.teardown)
 
-    self.broadcast_interval = broadcast_interval
-    self.message = message
-    SYSTEM_SHUTDOWN.connect(teardown)
-
-    def teardown( sender, **kwargs):
-        running = False
+    def teardown(self, sender, **kwargs):
+        self.running = False
 
     def run(self):
         try:
@@ -46,28 +53,24 @@ def send_broadast(name, broadcast_port, fe_port,broadcast_interval):
         self.socket.sendto(message, ('<broadcast>', self.broadcast_port))
 
 
-def bc_socket():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    return s
+class BroadcastReceiver(Thread):
+    def __init__(self, name, port):
+        Thread.__init__(self, name=name)
+        self.setDaemon(True)
 
+        self.running = True
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind(('', port))
+        self.socket.settimeout(1.0)
+        SYSTEM_SHUTDOWN.connect(self.teardown)
 
-def receive_broadcast(port):
-    def update_peers(conn):
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            print "received:", data
+    def teardown(self, sender, **kwargs):
+        self.running = False
 
-        conn.close()
-
-    s = bc_socket()
-    s.bind(('', port))
-    s.listen(10)
-
-    while 1:
-        connection, addr = s.accept()
-        start_new_thread(update_peers, (connection,))
-
-    s.close()
+    def run(self):
+        while self.running:
+            try:
+                bcm = self.socket.recvfrom(1024)
+                logging.debug('received broadcast message: [%s]', bcm[0])
+            except timeout:
+                pass
