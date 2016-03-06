@@ -3,11 +3,11 @@ import tempfile
 from time import sleep
 
 from mock import MagicMock
-from mocket.mocket import mocketize, Mocket, MocketEntry
 from pykka.actor import ActorRef
 
 from fdist.lfs import LocalFileSystem, FileUpdater
 from test.logTestCase import LogTestCase
+from test.mock_socket import MockSocket
 
 TEST_RELOAD_LOCAL_FILES_SEC = 0.2
 
@@ -46,18 +46,19 @@ class TestLocalFileSystem(LogTestCase):
 class TestFileUpdater(LogTestCase):
     def setUp(self):
         self.fileUpdater = FileUpdater.start()
+        self.remote_node = ('localhost', 15000)
+        self.mockedSocket = MockSocket(self.remote_node)
 
-    @mocketize
+    def tearDown(self):
+        self.mockedSocket.stop()
+
     def test_update_node(self):
-        host = 'localhost'
-        port = 15000
+        new_files = ["lala.txt"]
+        self.fileUpdater.tell({'files': new_files})
+        self.fileUpdater.tell({'nodes': [self.remote_node]})
 
-        Mocket.register(MocketEntry('{}:{}'.format(host, port), 'received some'))
-
-        self.fileUpdater.tell({'nodes': [(host, port)]})
-
-        sleep(0.3)
-        print "received:", Mocket._requests
+        sleep(0.5)
+        self.quickEquals(self.mockedSocket.received(), new_files)
         #
         # self.fileUpdate.tell({'nodes': ['']})
         #

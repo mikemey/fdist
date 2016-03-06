@@ -1,11 +1,9 @@
 import logging
-import sys
 from unittest import TestCase
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s [%(name)-5s] %(message)s',
-                    stream=sys.stdout
-                    )
+from fdist import init_logging
+
+init_logging(logging.DEBUG)
 
 
 class LogTestCase(TestCase):
