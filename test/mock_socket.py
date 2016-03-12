@@ -1,15 +1,17 @@
 import SocketServer
 import json
+import socket
 from SocketServer import TCPServer
+from _socket import timeout
 from thread import start_new_thread
 from time import sleep
 
 
-class MockSocket(object):
+class MockTCPServer(object):
     def __init__(self, server_address):
         self.server_address = server_address
-        self.server = TCPServer(self.server_address, RecorderHandler)
         SocketServer.TCPServer.allow_reuse_address = True
+        self.server = TCPServer(self.server_address, RecorderHandler)
         self.server.data_records = []
 
         def start_listening(server):
@@ -29,6 +31,31 @@ class MockSocket(object):
 class RecorderHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         data = self.request.recv(1024).strip()
-        self.server.data_records += json.loads(data)
-        # just send back the same data, but upper-cased
-        # self.request.sendall(data.upper())
+        self.server.data_records.append(json.loads(data))
+
+
+class MockUDPServer(object):
+    def __init__(self, server_port):
+        self.running = True
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind(('', server_port))
+        self.socket.settimeout(1.0)
+
+        self.data_records = []
+        start_new_thread(self.run, ())
+
+    def run(self):
+        while self.running:
+            try:
+                message, address = self.socket.recvfrom(1024)
+                self.data_records.append(json.loads(message))
+            except timeout:
+                pass
+        self.socket.close()
+
+    def received(self):
+        return self.data_records
+
+    def stop(self):
+        self.running = False

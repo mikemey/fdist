@@ -7,9 +7,10 @@ from pykka.actor import ActorRef
 
 from fdist.lfs import LocalFileSystem, FileUpdater
 from test.logTestCase import LogTestCase
-from test.mock_socket import MockSocket
+from test.mock_socket import MockTCPServer
 
 TEST_RELOAD_LOCAL_FILES_SEC = 0.2
+TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
 
 
 class TestLocalFileSystem(LogTestCase):
@@ -31,7 +32,7 @@ class TestLocalFileSystem(LogTestCase):
 
         new_file = 'some_file.txt'
         self.addFile(new_file)
-        sleep(TEST_RELOAD_LOCAL_FILES_SEC * 2)
+        sleep(TEST_WAIT)
 
         self.receiver.tell.assert_called_once_with({'files': [new_file]})
 
@@ -40,7 +41,7 @@ class TestLocalFileSystem(LogTestCase):
         for new_file in new_files:
             self.addFile(new_file)
 
-        sleep(TEST_RELOAD_LOCAL_FILES_SEC * 2)
+        sleep(TEST_WAIT)
         self.receiver.tell.assert_called_with({'files': new_files})
 
 
@@ -48,24 +49,15 @@ class TestFileUpdater(LogTestCase):
     def setUp(self):
         self.fileUpdater = FileUpdater.start()
         self.remote_node = ('localhost', 15000)
-        self.mockedSocket = MockSocket(self.remote_node)
+        self.mockedSocket = MockTCPServer(self.remote_node)
 
     def tearDown(self):
         self.mockedSocket.stop()
 
     def test_update_node(self):
-        new_files = ["lala.txt"]
-        self.fileUpdater.tell({'files': new_files})
+        new_file_message = {'files': ["lala.txt"]}
+        self.fileUpdater.tell(new_file_message)
         self.fileUpdater.tell({'nodes': [self.remote_node]})
 
-        sleep(0.5)
-        self.quickEquals(self.mockedSocket.received(), new_files)
-        #
-        # self.fileUpdate.tell({'nodes': ['']})
-        #
-        # new_files = ['some_file.txt', 'some_file2.txt', 'some_file3.txt']
-        # for new_file in new_files:
-        #     self.addFile(new_file)
-        #
-        # sleep(TEST_RELOAD_LOCAL_FILES_SEC * 2)
-        # self.receiver.tell.assert_called_with({'files': new_files})
+        sleep(TEST_WAIT)
+        self.assertTrue(new_file_message in self.mockedSocket.received(), self.mockedSocket.received())

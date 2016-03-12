@@ -14,8 +14,8 @@ class LocalFileSystem(pykka.ThreadingActor):
 
     def __init__(self, receiver, directory, delay_seconds):
         super(LocalFileSystem, self).__init__()
+        self.logger = logging.getLogger(LocalFileSystem.__name__)
 
-        self.logger = logging.getLogger("fdist.fs.check")
         self.receiver = receiver
         self.directory = directory
         self.delay_seconds = delay_seconds
@@ -46,7 +46,8 @@ class FileUpdater(pykka.ThreadingActor):
 
     def __init__(self):
         super(FileUpdater, self).__init__()
-        self.logger = logging.getLogger("fdist.fs.update")
+        self.logger = logging.getLogger(FileUpdater.__name__)
+
         self.nodes = []
         self.files = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,5 +77,5 @@ class FileUpdater(pykka.ThreadingActor):
     def send_file_list_to(self, node):
         self.logger.debug('send to: %s -- %s', node, self.files)
         self.socket.connect(node)
-        self.socket.send(json.dumps(self.files))
+        self.socket.send(json.dumps({"files": self.files}))
         self.socket.close()

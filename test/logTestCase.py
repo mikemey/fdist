@@ -4,6 +4,7 @@ from unittest import TestCase
 from fdist import init_logging
 
 init_logging(logging.DEBUG)
+logging.getLogger("pykka").setLevel(logging.INFO)
 
 
 class LogTestCase(TestCase):
@@ -14,4 +15,4 @@ class LogTestCase(TestCase):
 
     def quickEquals(self, actual, expected):
         self.assertEquals(actual, expected,
-                          "Error:\n\tactual  : [{}]\n\texpected: [{}]".format(actual, expected))
+                          "Error:\n\tactual  : =={}==\n\texpected: =={}==".format(actual, expected))
