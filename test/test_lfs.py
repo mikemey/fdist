@@ -16,9 +16,10 @@ class TestLocalFileSystem(LogTestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.receiver = MagicMock(spec=ActorRef)
-        LocalFileSystem.start(self.receiver, self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
+        self.lfs = LocalFileSystem.start(self.receiver, self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
 
     def tearDown(self):
+        self.lfs.stop()
         shutil.rmtree(self.tmpdir)
 
     def addFile(self, filename):
