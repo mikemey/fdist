@@ -9,6 +9,7 @@ class MockSocket(object):
     def __init__(self, server_address):
         self.server_address = server_address
         self.server = TCPServer(self.server_address, RecorderHandler)
+        SocketServer.TCPServer.allow_reuse_address = True
         self.server.data_records = []
 
         def start_listening(server):
