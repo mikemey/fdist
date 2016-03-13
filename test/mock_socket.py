@@ -39,8 +39,9 @@ class MockUDPServer(object):
         self.running = True
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind(('', server_port))
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.settimeout(1.0)
+        self.socket.bind(('', server_port))
 
         self.data_records = []
         start_new_thread(self.run, ())

@@ -7,6 +7,20 @@ import pykka
 BROADCAST = {'cmd': 'BROADCAST'}
 
 
+class NodeFinder(pykka.ThreadingActor):
+    use_daemon_thread = True
+
+    def __init__(self, receiver, broadcast_port):
+        super(NodeFinder, self).__init__()
+        self.logger = logging.getLogger(NodeFinder.__name__)
+
+        self.broadcast_port = broadcast_port
+        self.receiver = receiver
+
+    def on_receive(self, message):
+        pass
+
+
 class Announcer(pykka.ThreadingActor):
     use_daemon_thread = True
 
