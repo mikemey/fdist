@@ -1,24 +1,25 @@
+import json
 import logging
 import socket
 import time
+from _socket import timeout
+from thread import start_new_thread
 
 import pykka
 
 BROADCAST = {'cmd': 'BROADCAST'}
 
 
-class NodeFinder(pykka.ThreadingActor):
-    use_daemon_thread = True
+def to_local_node_message(local_node):
+    return json.dumps({"node": {
+        "ip": local_node[0],
+        "port": local_node[1]}
+    })
 
-    def __init__(self, receiver, broadcast_port):
-        super(NodeFinder, self).__init__()
-        self.logger = logging.getLogger(NodeFinder.__name__)
 
-        self.broadcast_port = broadcast_port
-        self.receiver = receiver
-
-    def on_receive(self, message):
-        pass
+def from_local_node_message(message):
+    node_info = json.loads(message)['node']
+    return node_info['ip'], node_info['port']
 
 
 class Announcer(pykka.ThreadingActor):
@@ -29,7 +30,7 @@ class Announcer(pykka.ThreadingActor):
         self.logger = logging.getLogger(Announcer.__name__)
 
         self.interval_seconds = interval_seconds
-        self.message = """{{ "node": "{0}:{1}" }}""".format(local_node[0], str(local_node[1]))
+        self.message = to_local_node_message(local_node)
         self.addr = ('<broadcast>', broadcast_port)
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -50,3 +51,41 @@ class Announcer(pykka.ThreadingActor):
 
     def broadcast(self):
         self.socket.sendto(self.message, self.addr)
+
+
+class NodeFinder(object):
+    def __init__(self, receiver, broadcast_port):
+        super(NodeFinder, self).__init__()
+        self.logger = logging.getLogger(Announcer.__name__)
+        self.running = True
+
+        self.socket = self.setup_socket(broadcast_port)
+        self.logger.debug("socket opened [%s]", broadcast_port)
+        self.receiver = receiver
+        self.nodes = {}
+        start_new_thread(self.run, ())
+
+    def run(self):
+        while self.running:
+            try:
+                message, address = self.socket.recvfrom(1024)
+                self.logger.debug("received from [%s]: %s-%s", address, type(message), message)
+                ip, port = from_local_node_message(message)
+
+                self.nodes[ip] = port
+                self.receiver.tell(self.nodes)
+            except timeout:
+                pass
+
+        self.socket.close()
+
+    @staticmethod
+    def setup_socket(broadcast_port):
+        sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sck.settimeout(1.0)
+        sck.bind(('', broadcast_port))
+        return sck
+
+    def stop(self):
+        self.running = False

@@ -29,7 +29,10 @@ class TestAnnouncer(LogTestCase):
         sleep(TEST_WAIT)
         received = self.mockedSocket.received()
 
-        expected = {"node": "{0}:{1}".format(self.local_node[0], self.local_node[1])}
+        expected = {
+            "node": {"ip": self.local_node[0],
+                     "port": self.local_node[1]}
+        }
         self.assertTrue(expected in received, received)
 
 
@@ -41,20 +44,23 @@ class TestNodeFinder(LogTestCase):
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         self.receiver = MagicMock(spec=ActorRef)
-        self.node_finder = NodeFinder.start(self.receiver, self.broadcast_port)
+        self.node_finder = NodeFinder(self.receiver, self.broadcast_port)
+
+    def tearDown(self):
+        self.node_finder.stop()
 
     def send_broadcast(self, message):
         self.socket.sendto(message, ('<broadcast>', self.broadcast_port))
 
     def test_forwards_new_node(self):
-        self.send_broadcast("""{"node": "some-ip:12121" }""")
+        self.send_broadcast("""{"node": { "ip": "some-ip", "port": 12121 }}""")
         sleep(TEST_WAIT)
 
-        self.receiver.tell.assert_called_with({'nodes': [("some-ip", 12121)]})
+        self.receiver.tell.assert_called_with({'some-ip': 12121})
 
     def test_forwards_two_new_node(self):
-        self.send_broadcast("""{"node": "some-ip:12121" }""")
-        self.send_broadcast("""{"node": "some-ip:32323" }""")
+        self.send_broadcast("""{"node": { "ip": "some-ip1", "port": 12121 }}""")
+        self.send_broadcast("""{"node": { "ip": "some-ip2", "port": 32323 }}""")
         sleep(TEST_WAIT)
 
-        self.receiver.tell.assert_called_with({'nodes': [("some-ip", 12121), ("some-ip", 32323)]})
+        self.receiver.tell.assert_called_with({'some-ip1': 12121, 'some-ip2': 32323})
