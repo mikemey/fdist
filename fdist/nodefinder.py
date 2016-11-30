@@ -22,6 +22,7 @@ def from_local_node_message(message):
     return node_info['ip'], node_info['port']
 
 
+# broadcasts local IP/port
 class Announcer(pykka.ThreadingActor):
     use_daemon_thread = True
 
@@ -53,6 +54,7 @@ class Announcer(pykka.ThreadingActor):
         self.socket.sendto(self.message, self.addr)
 
 
+# receives broadcast and sends off dict of remote node -> port
 class NodeFinder(object):
     def __init__(self, receiver, broadcast_port):
         super(NodeFinder, self).__init__()
