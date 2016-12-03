@@ -1,4 +1,8 @@
-import pprint
+import locale
+
+from math import sqrt
+
+locale.setlocale(locale.LC_ALL, 'en_US')
 
 
 def print_primes():
@@ -6,7 +10,7 @@ def print_primes():
     dividends = [2, 3]
     while True:
         curr += 1
-        limit = curr / 2
+        limit = sqrt(curr)
         found = True
         for div in dividends:
             over_half = div > limit
@@ -18,9 +22,10 @@ def print_primes():
                 found = False
                 break
         if found:
-            if len(dividends) % 100 == 0:
-                pprint.pprint(curr)
             dividends.append(curr)
+            div_count = len(dividends)
+            if div_count % 1000 == 0:
+                print locale.format("%40d", curr, grouping=True)
 
 
 if __name__ == "__main__":
