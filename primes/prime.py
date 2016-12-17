@@ -24,7 +24,7 @@ def print_primes():
         if found:
             dividends.append(curr)
             div_count = len(dividends)
-            if div_count % 1000 == 0:
+            if div_count % 1000000 == 0:
                 print locale.format("%40d", curr, grouping=True)
 
 
