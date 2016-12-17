@@ -16,3 +16,17 @@ class LogTestCase(TestCase):
     def quickEquals(self, actual, expected):
         self.assertEquals(actual, expected,
                           "Error:\n\tactual  : =={}==\n\texpected: =={}==".format(actual, expected))
+
+
+class AllItemsIn:
+    def __init__(self, expected):
+        self.expected = expected
+
+    def __eq__(self, other):
+        for exp_item in self.expected:
+            if exp_item not in other:
+                return False
+        return True
+
+    def __repr__(self):
+        return "Any(%s)" % self.expected

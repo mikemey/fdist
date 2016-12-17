@@ -58,7 +58,7 @@ class Announcer(pykka.ThreadingActor):
 class NodeFinder(object):
     def __init__(self, receiver, broadcast_port):
         super(NodeFinder, self).__init__()
-        self.logger = logging.getLogger(Announcer.__name__)
+        self.logger = logging.getLogger(NodeFinder.__name__)
         self.running = True
 
         self.socket = self.setup_socket(broadcast_port)
