@@ -1,31 +1,43 @@
 import locale
-
+import time
 from math import sqrt
 
 locale.setlocale(locale.LC_ALL, 'en_US')
 
 
 def print_primes():
-    curr = 3
-    dividends = [2, 3]
+    start_time = ticker = time.time()
+    current_prime = 3
+    all_primes = [2, 3]
     while True:
-        curr += 1
-        limit = sqrt(curr)
+        current_prime += 1
+        limit = sqrt(current_prime)
         found = True
-        for div in dividends:
-            over_half = div > limit
-            if over_half:
+        for div in all_primes:
+            over_limit = div > limit
+            if over_limit:
                 break
 
-            mod = curr % div
+            mod = current_prime % div
             if mod == 0:
                 found = False
                 break
         if found:
-            dividends.append(curr)
-            div_count = len(dividends)
-            if div_count % 1000000 == 0:
-                print locale.format("%40d", curr, grouping=True)
+            all_primes.append(current_prime)
+            if time.time() - ticker > 10:
+                ticker = time.time()
+                log_progress(ticker - start_time, len(all_primes), current_prime)
+
+
+def log_progress(elapsed, count, current):
+    minutes, seconds = divmod(elapsed, 60)
+    hours, minutes = divmod(minutes, 60)
+    print \
+        "%4d:%02d:%02d" % (hours, minutes, seconds), \
+        "|", \
+        locale.format("%20d", count, grouping=True), \
+        "|", \
+        locale.format("%30d", current, grouping=True)
 
 
 if __name__ == "__main__":
