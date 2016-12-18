@@ -19,9 +19,10 @@ class TestFileUpdater(LogTestCase):
         self.filesDiff = FilesDiff.start(self.receiver)
 
     def test_report_missing_file(self):
-        files = ["lala.txt"]
+        files = ["lala.txt", "li_li.txt"]
         self.filesDiff.tell(local_files_message(["lulu.txt"]))
         self.filesDiff.tell(remote_files_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files))
 
         sleep(TEST_WAIT)
-        self.receiver.tell.assert_called_with(missing_file_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files))
+        self.receiver.tell.assert_any_call(missing_file_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files[0]))
+        self.receiver.tell.assert_any_call(missing_file_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files[1]))

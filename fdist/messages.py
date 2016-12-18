@@ -1,7 +1,7 @@
 BROADCAST_FILES = 'BROADCAST_FILES'
 LOCAL_FILES = 'LOCAL_FILES'
 REMOTE_FILES = 'REMOTE_FILES'
-MISSING_FILES = 'MISSING_FILES'
+MISSING_FILE = 'MISSING_FILE'
 
 SELF_POKE = {'message': 'self-poke'}
 
@@ -35,16 +35,8 @@ def remote_files_message(ip, port, files):
 
 def missing_file_message(ip, port, missing_file):
     return {
-        'message': MISSING_FILES,
+        'message': MISSING_FILE,
         'ip': ip,
         'port': port,
         'file': missing_file
     }
-
-
-def missing_file_message_from(files_message):
-    return missing_file_message(
-        files_message['ip'],
-        files_message['port'],
-        files_message['files']
-    )
