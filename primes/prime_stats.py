@@ -6,4 +6,3 @@ class PrimeCalculator(object):
     def next(self):
         """Should be called to indicate a new prime number."""
         raise NotImplementedError("not implemented.")
-

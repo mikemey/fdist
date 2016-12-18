@@ -48,7 +48,7 @@ def free_port():
             sck.settimeout(1.0)
             sck.bind(('', start))
             return start
-        except Exception as e:
+        except IOError:
             start += distance
         finally:
             sck.close()

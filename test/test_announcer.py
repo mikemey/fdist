@@ -1,6 +1,6 @@
 from time import sleep
 
-from announcer import Announcer
+from fdist.announcer import Announcer
 from fdist.messages import broadcast_message, local_files_message
 from helpers import free_port
 from test.helpers import LogTestCase
@@ -40,5 +40,5 @@ class TestAnnouncer(LogTestCase):
         received = self.mockedSocket.received()
         expected = broadcast_message(TEST_PORT, files)
         self.assertTrue(expected in received,
-                        "\nexpected: [%s]"
-                        "\nreceived: [%s]" % (expected, received))
+                        "\n expected: [%s]"
+                        "\n received: [%s]" % (expected, received))

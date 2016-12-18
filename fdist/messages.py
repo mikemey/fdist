@@ -33,12 +33,12 @@ def remote_files_message(ip, port, files):
     }
 
 
-def missing_file_message(ip, port, file):
+def missing_file_message(ip, port, missing_file):
     return {
         'message': MISSING_FILES,
         'ip': ip,
         'port': port,
-        'file': file
+        'file': missing_file
     }
 
 
