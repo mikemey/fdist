@@ -40,5 +40,4 @@ class Announcer(pykka.ThreadingActor):
         self.actor_ref.tell(SELF_POKE)
 
     def broadcast(self):
-        print "sending:", json.dumps(self.message)
         self.socket.sendto(json.dumps(self.message), self.addr)
