@@ -1,32 +1,27 @@
 from time import sleep
 
+from mock.mock import MagicMock
+from pykka.actor import ActorRef
+
 from fdist.files_diff import FilesDiff
 from fdist.messages import local_files_message, remote_files_message, missing_file_message
-from test.logTestCase import LogTestCase
-from test.mock_socket import MockTCPServer
+from test.helpers import LogTestCase
 
-TEST_RELOAD_LOCAL_FILES_SEC = 0.2
-TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
+TEST_REMOTE_IP = '333.333.333.333'
+TEST_REMOTE_PORT = 999999
 
-TEST_REMOTE_HOST = 'localhost'
-TEST_REMOTE_PORT = 15000
+TEST_WAIT = 0.5
 
 
 class TestFileUpdater(LogTestCase):
     def setUp(self):
-        self.fileUpdater = FilesDiff.start()
-        self.mockedSocket = MockTCPServer((TEST_REMOTE_HOST, TEST_REMOTE_PORT))
+        self.receiver = MagicMock(spec=ActorRef)
+        self.filesDiff = FilesDiff.start(self.receiver)
 
-    def tearDown(self):
-        self.mockedSocket.stop()
-
-    def test_update_node(self):
+    def test_report_missing_file(self):
         files = ["lala.txt"]
-        self.fileUpdater.tell(local_files_message(["lulu.txt"]))
-        self.fileUpdater.tell(remote_files_message(TEST_REMOTE_HOST, TEST_REMOTE_PORT, files))
+        self.filesDiff.tell(local_files_message(["lulu.txt"]))
+        self.filesDiff.tell(remote_files_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files))
 
         sleep(TEST_WAIT)
-        self.assertTrue(
-            missing_file_message(TEST_REMOTE_HOST, TEST_REMOTE_PORT, "lala.txt") in self.mockedSocket.received(),
-            self.mockedSocket.received()
-        )
+        self.receiver.tell.assert_called_with(missing_file_message(TEST_REMOTE_IP, TEST_REMOTE_PORT, files))

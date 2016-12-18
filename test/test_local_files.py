@@ -7,7 +7,7 @@ from pykka.actor import ActorRef
 
 from fdist.local_files import LocalFileSystem
 from fdist.messages import local_files_message
-from test.logTestCase import LogTestCase, AllItemsIn
+from test.helpers import LogTestCase, AllItemsIn
 
 TEST_RELOAD_LOCAL_FILES_SEC = 0.2
 TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
