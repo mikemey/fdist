@@ -12,7 +12,7 @@ class LocalFileSystem(pykka.ThreadingActor):
 
     def __init__(self, receiver, local_directory, delay_seconds):
         super(LocalFileSystem, self).__init__()
-        self.logger = logging.getLogger(LocalFileSystem.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.receiver = receiver
         self.localDirectory = local_directory

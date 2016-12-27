@@ -10,7 +10,7 @@ class FilesDiff(pykka.ThreadingActor):
 
     def __init__(self, receiver):
         super(FilesDiff, self).__init__()
-        self.logger = logging.getLogger(FilesDiff.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.receiver = receiver
         self.local_files = []

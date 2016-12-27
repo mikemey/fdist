@@ -12,7 +12,7 @@ BROADCAST = {'cmd': 'BROADCAST'}
 class RemoteFileSystem(object):
     def __init__(self, receiver, server_port):
         super(RemoteFileSystem, self).__init__()
-        self.logger = logging.getLogger(RemoteFileSystem.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.running = True
 
         self.socket = self.setup_socket(server_port)

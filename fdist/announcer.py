@@ -13,7 +13,7 @@ class Announcer(pykka.ThreadingActor):
 
     def __init__(self, fe_port, broadcast_port, interval_seconds):
         super(Announcer, self).__init__()
-        self.logger = logging.getLogger(Announcer.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.interval_seconds = interval_seconds
         self.fe_port = fe_port
