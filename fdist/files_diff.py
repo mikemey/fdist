@@ -13,7 +13,7 @@ class FilesDiff(pykka.ThreadingActor):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.receiver = receiver
-        self.local_files = []
+        self.local_files = set()
 
     def on_start(self):
         self.logger.info('started')
@@ -21,7 +21,7 @@ class FilesDiff(pykka.ThreadingActor):
     def on_receive(self, message):
         if command(message) is LOCAL_FILES:
             self.logger.info('new local file list: %s', message['files'])
-            self.local_files = message['files']
+            self.local_files |= set(message['files'])
         if command(message) is REMOTE_FILES:
             self.logger.debug('remote file list: %s', message['files'])
             self.update_remote_files(message)
