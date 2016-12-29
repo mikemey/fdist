@@ -23,7 +23,7 @@ class FilesDiff(pykka.ThreadingActor):
             self.logger.info('new local file list: %s', message['files'])
             self.local_files = message['files']
         if command(message) is REMOTE_FILES:
-            self.logger.info('new remote file list: %s', message['files'])
+            self.logger.info('remote file list: %s', message['files'])
             self.update_remote_files(message)
 
     def update_remote_files(self, message):

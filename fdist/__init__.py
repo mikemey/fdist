@@ -7,14 +7,14 @@ from pykka.registry import ActorRegistry
 
 from announcer import Announcer
 from files_diff import FilesDiff
-from local_files import LocalFileSystem
+from local_files import LocalFiles
 from messages import command, MISSING_FILE
-from remote_files import RemoteFileSystem
+from remote_files import RemoteFiles
 
 
 def init_logging(level=logging.INFO):
     logging.basicConfig(level=level,
-                        format='%(asctime)s %(levelname)s [%(name)-15s] %(message)s',
+                        format='%(asctime)s %(levelname)s [%(name)-12s] %(message)s',
                         stream=sys.stdout
                         )
 
@@ -39,24 +39,22 @@ DEFAULT_INTERVAL = 3
 LOCAL_DIR = "tmp"
 
 
-def start_file_check():
+def main():
+    init_logging()
+
     broadcaster = Announcer.start(FE_PORT, BC_PORT, DEFAULT_INTERVAL)
 
     printer = PrinterActor().start()
     file_diff = FilesDiff.start(printer)
 
-    LocalFileSystem.start([broadcaster, file_diff], LOCAL_DIR, DEFAULT_INTERVAL)
-    remote_files = RemoteFileSystem(file_diff, FE_PORT)
+    LocalFiles.start([broadcaster, file_diff], LOCAL_DIR, DEFAULT_INTERVAL)
+    remote = RemoteFiles(file_diff, BC_PORT).start()
 
-
-def main():
-    init_logging()
-
-    start_file_check()
     logging.info('FDIST started')
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         logging.info('FDIST stopping...')
+        remote.stop()
         ActorRegistry.stop_all()

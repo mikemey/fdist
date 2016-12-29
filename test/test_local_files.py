@@ -5,7 +5,7 @@ from time import sleep
 from mock import MagicMock
 from pykka.actor import ActorRef
 
-from fdist.local_files import LocalFileSystem
+from fdist.local_files import LocalFiles
 from fdist.messages import local_files_message
 from test.helpers import LogTestCase, AllItemsIn
 
@@ -13,13 +13,13 @@ TEST_RELOAD_LOCAL_FILES_SEC = 0.2
 TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
 
 
-class TestLocalFileSystem(LogTestCase):
+class TestLocalFiles(LogTestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.first_receiver = MagicMock(spec=ActorRef)
         self.second_receiver = MagicMock(spec=ActorRef)
-        self.lfs = LocalFileSystem.start([self.first_receiver, self.second_receiver],
-                                         self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
+        self.lfs = LocalFiles.start([self.first_receiver, self.second_receiver],
+                                    self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
 
     def tearDown(self):
         self.lfs.stop()

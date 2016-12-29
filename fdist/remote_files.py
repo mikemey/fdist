@@ -6,44 +6,45 @@ from thread import start_new_thread
 
 from fdist.messages import remote_files_message
 
-BROADCAST = {'cmd': 'BROADCAST'}
+OWN_IP = socket.gethostbyname(socket.gethostname())
 
 
-class RemoteFileSystem(object):
-    def __init__(self, receiver, server_port):
-        super(RemoteFileSystem, self).__init__()
+class RemoteFiles(object):
+    def __init__(self, receiver, broadcast_port):
+        super(RemoteFiles, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.running = True
 
-        self.socket = self.setup_socket(server_port)
-        self.logger.debug("socket opened [%s]", server_port)
+        self.socket = self.setup_socket(broadcast_port)
+        self.logger.debug("socket opened [%s]", broadcast_port)
         self.receiver = receiver
+
+    def start(self):
         start_new_thread(self.run, ())
+        return self
 
     def run(self):
         try:
-            def read_from_raw(raw_message):
-                msg = json.loads(raw_message)
-                return msg['port'], msg
-
             while self.running:
                 try:
                     message, (ip, _) = self.socket.recvfrom(1024)
-                    port, message = read_from_raw(message)
+                    if ip != OWN_IP:
+                        self.logger.debug("received from %s : %s", ip, message)
 
-                    self.logger.debug("received from [%s]:[%s]", ip, message)
-                    self.receiver.tell(remote_files_message(ip, port, message['files']))
+                        msg = json.loads(message)
+                        port, files = msg['port'], msg['files']
+                        self.receiver.tell(remote_files_message(ip, port, files))
                 except timeout:
                     pass
         finally:
             self.socket.close()
 
     @staticmethod
-    def setup_socket(server_port):
+    def setup_socket(broadcast_port):
         sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sck.settimeout(1.0)
-        sck.bind(('', server_port))
+        sck.bind(('', broadcast_port))
         return sck
 
     def stop(self):

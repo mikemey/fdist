@@ -1,3 +1,4 @@
 mock==2.0.0
 Pykka==1.2.1
 pytest==2.5.2
+scapy==2.3.3
