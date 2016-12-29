@@ -14,7 +14,7 @@ from remote_files import RemoteFiles
 
 def init_logging(level=logging.INFO):
     logging.basicConfig(level=level,
-                        format='%(asctime)s %(levelname)s [%(name)-12s] %(message)s',
+                        format='%(asctime)s %(levelname)5s [%(name)-12s] %(message)s',
                         stream=sys.stdout
                         )
 
@@ -29,7 +29,7 @@ class PrinterActor(pykka.ThreadingActor):
 
     def on_receive(self, message):
         if command(message) is MISSING_FILE:
-            self.logger.info('files missing: ', message['file'])
+            self.logger.info('files missing: %s', message['file'])
 
 
 FE_PORT = 18000
