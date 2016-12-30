@@ -3,9 +3,9 @@ from time import sleep
 
 from mock.mock import MagicMock
 
-from file_loader import ActorProvider
-from file_master import FileMaster
-from messages import missing_file_message
+from fdist.file_loader import FileLoaderProvider
+from fdist.file_master import FileMaster
+from fdist.messages import missing_file_message
 from test.helpers import LogTestCase
 
 TEST_IP = '333.333.333.333'
@@ -16,7 +16,7 @@ TEST_WAIT = 0.5
 class TestFileMaster(LogTestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
-        self.provider_mock = MagicMock(spec=ActorProvider)
+        self.provider_mock = MagicMock(spec=FileLoaderProvider)
         self.file_master = FileMaster.start(self.provider_mock)
 
     def tearDown(self):

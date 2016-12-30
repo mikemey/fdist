@@ -5,7 +5,7 @@ import time
 from pykka.registry import ActorRegistry
 
 from announcer import Announcer
-from file_loader import ActorProvider
+from file_loader import FileLoaderProvider
 from file_master import FileMaster
 from files_diff import FilesDiff
 from local_files import LocalFiles
@@ -29,7 +29,7 @@ LOCAL_DIR = "tmp"
 def main():
     init_logging()
 
-    master = FileMaster.start(ActorProvider)
+    master = FileMaster.start(FileLoaderProvider())
     file_diff = FilesDiff.start(master)
 
     broadcaster = Announcer.start(FE_PORT, BC_PORT, DEFAULT_INTERVAL)

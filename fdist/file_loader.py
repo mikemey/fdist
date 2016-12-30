@@ -3,7 +3,7 @@ import logging
 from log_actor import LogActor
 
 
-class ActorProvider(object):
+class FileLoaderProvider(object):
     @staticmethod
     def create_file_loader():
         return FileLoader().start
