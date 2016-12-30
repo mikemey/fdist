@@ -29,7 +29,7 @@ LOCAL_DIR = "tmp"
 def main():
     init_logging()
 
-    master = FileMaster(ActorProvider).start()
+    master = FileMaster.start(ActorProvider)
     file_diff = FilesDiff.start(master)
 
     broadcaster = Announcer.start(FE_PORT, BC_PORT, DEFAULT_INTERVAL)
