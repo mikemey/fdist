@@ -31,9 +31,6 @@ class TestLocalFiles(LogTestCase):
                 f.write("FOOBAR")
 
     def test_add_one_file_in_folder(self):
-        self.first_receiver.assert_not_called()
-        self.second_receiver.assert_not_called()
-
         new_file = ['some_file_test1.txt']
         self.addFile(new_file)
         sleep(TEST_WAIT)
@@ -48,3 +45,11 @@ class TestLocalFiles(LogTestCase):
         sleep(TEST_WAIT)
         self.first_receiver.tell.assert_called_with(local_files_message(AllItemsIn(new_files)))
         self.second_receiver.tell.assert_called_with(local_files_message(AllItemsIn(new_files)))
+
+    def test_dont_report_hidden_files(self):
+        new_file = ['.some_file_test1.txt']
+        self.addFile(new_file)
+        sleep(TEST_WAIT)
+
+        self.first_receiver.tell.assert_not_called()
+        self.second_receiver.tell.assert_not_called()

@@ -17,7 +17,7 @@ class LocalFiles(pykka.ThreadingActor):
         self.receiver = receiver
         self.localDirectory = local_directory
         self.pokeDelaySeconds = delay_seconds
-        self.localFiles = []
+        self.cached_files = []
 
     def on_start(self):
         self.logger.info('started')
@@ -33,8 +33,12 @@ class LocalFiles(pykka.ThreadingActor):
         self.actor_ref.tell(SELF_POKE)
 
     def check_file_updates(self):
-        files = os.listdir(self.localDirectory)
-        if cmp(files, self.localFiles):
-            self.localFiles = files
+        files = self.local_files()
+        if cmp(files, self.cached_files):
+            self.cached_files = files
             for recv in self.receiver:
                 recv.tell(local_files_message(files))
+
+    def local_files(self):
+        file_list = os.listdir(self.localDirectory)
+        return [f for f in file_list if not f.startswith('.')]
