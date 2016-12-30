@@ -1,16 +1,13 @@
-import logging
 import os
 import time
 
-import pykka
-
 from fdist.messages import local_files_message, SELF_POKE
+from log_actor import LogActor
 
 
-class LocalFiles(pykka.ThreadingActor):
+class LocalFiles(LogActor):
     def __init__(self, receiver, local_directory, delay_seconds):
         super(LocalFiles, self).__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.receiver = receiver
         self.localDirectory = local_directory
@@ -18,7 +15,7 @@ class LocalFiles(pykka.ThreadingActor):
         self.cached_files = []
 
     def on_start(self):
-        self.logger.info('started')
+        super(LocalFiles, self).on_start()
         self.poke()
 
     def on_receive(self, message):

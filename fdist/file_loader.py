@@ -1,6 +1,6 @@
 import logging
 
-import pykka
+from log_actor import LogActor
 
 
 class ActorProvider(object):
@@ -9,7 +9,7 @@ class ActorProvider(object):
         return FileLoader().start
 
 
-class FileLoader(pykka.ThreadingActor):
+class FileLoader(LogActor):
     def __init__(self):
         super(FileLoader, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)

@@ -1,19 +1,14 @@
 import json
-import logging
 import socket
 import time
 
-import pykka
-
+from log_actor import LogActor
 from messages import SELF_POKE, broadcast_message, LOCAL_FILES, command
 
 
-class Announcer(pykka.ThreadingActor):
-    use_daemon_thread = True
-
+class Announcer(LogActor):
     def __init__(self, fe_port, broadcast_port, interval_seconds):
         super(Announcer, self).__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.interval_seconds = interval_seconds
         self.fe_port = fe_port
@@ -21,7 +16,7 @@ class Announcer(pykka.ThreadingActor):
         self.addr = ('<broadcast>', broadcast_port)
 
     def on_start(self):
-        self.logger.info('started')
+        super(Announcer, self).on_start()
         self.poke()
 
     def on_receive(self, message):

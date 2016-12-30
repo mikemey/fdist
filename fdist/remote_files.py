@@ -20,8 +20,12 @@ class RemoteFiles(object):
         self.receiver = receiver
 
     def start(self):
+        self.logger.info('started')
         start_new_thread(self.run, ())
         return self
+
+    def stop(self):
+        self.running = False
 
     def run(self):
         try:
@@ -38,6 +42,7 @@ class RemoteFiles(object):
                     pass
         finally:
             self.socket.close()
+            self.logger.info('stopped')
 
     @staticmethod
     def setup_socket(broadcast_port):
@@ -46,6 +51,3 @@ class RemoteFiles(object):
         sck.settimeout(1.0)
         sck.bind(('', broadcast_port))
         return sck
-
-    def stop(self):
-        self.running = False

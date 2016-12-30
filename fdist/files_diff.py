@@ -1,20 +1,13 @@
-import logging
-
-import pykka
-
+from log_actor import LogActor
 from messages import command, LOCAL_FILES, REMOTE_FILES, missing_file_message
 
 
-class FilesDiff(pykka.ThreadingActor):
+class FilesDiff(LogActor):
     def __init__(self, receiver):
         super(FilesDiff, self).__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.receiver = receiver
         self.local_files = set()
-
-    def on_start(self):
-        self.logger.info('started')
 
     def on_receive(self, message):
         if command(message) is LOCAL_FILES:

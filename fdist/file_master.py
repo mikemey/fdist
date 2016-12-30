@@ -1,14 +1,10 @@
-import logging
-
-import pykka
-
+from log_actor import LogActor
 from messages import MISSING_FILE, command
 
 
-class FileMaster(pykka.ThreadingActor):
+class FileMaster(LogActor):
     def __init__(self, actor_provider):
         super(FileMaster, self).__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.actor_provider = actor_provider
         self.in_progress_list = []
