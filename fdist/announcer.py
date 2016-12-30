@@ -20,9 +20,6 @@ class Announcer(pykka.ThreadingActor):
         self.message = broadcast_message(self.fe_port, [])
         self.addr = ('<broadcast>', broadcast_port)
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
     def on_start(self):
         self.logger.info('started')
         self.poke()
@@ -40,4 +37,7 @@ class Announcer(pykka.ThreadingActor):
         self.actor_ref.tell(SELF_POKE)
 
     def broadcast(self):
-        self.socket.sendto(json.dumps(self.message), self.addr)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.sendto(json.dumps(self.message), self.addr)
+        s.close()
