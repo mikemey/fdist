@@ -8,8 +8,6 @@ from fdist.messages import local_files_message, SELF_POKE
 
 
 class LocalFiles(pykka.ThreadingActor):
-    use_daemon_thread = True
-
     def __init__(self, receiver, local_directory, delay_seconds):
         super(LocalFiles, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)

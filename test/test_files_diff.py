@@ -18,6 +18,9 @@ class TestFileUpdater(LogTestCase):
         self.receiver = MagicMock(spec=ActorRef)
         self.filesDiff = FilesDiff.start(self.receiver)
 
+    def tearDown(self):
+        self.filesDiff.stop()
+
     def test_report_missing_file(self):
         files = ["lala.txt", "li_li.txt"]
         self.filesDiff.tell(local_files_message(["lulu.txt"]))

@@ -38,7 +38,7 @@ r = random.Random()
 
 
 def free_port():
-    distance = r.randint(1, 10)
+    distance = r.randint(1, 20)
     start = 15000 + distance
     while True:
         try:

@@ -6,8 +6,6 @@ from messages import command, LOCAL_FILES, REMOTE_FILES, missing_file_message
 
 
 class FilesDiff(pykka.ThreadingActor):
-    use_daemon_thread = True
-
     def __init__(self, receiver):
         super(FilesDiff, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
