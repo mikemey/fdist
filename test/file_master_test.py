@@ -5,12 +5,13 @@ from mock.mock import MagicMock
 
 from fdist.file_loader import FileLoaderProvider
 from fdist.file_master import FileMaster
+from fdist.messages import load_failed_message
 from fdist.messages import missing_file_message
 from test.helpers import LogTestCase
 
-TEST_IP = '333.333.333.333'
-TEST_PORT = 999999
 TEST_WAIT = 0.5
+TEST_FILE = 'test.txt'
+MISSING_MESSAGE = missing_file_message('333.333.333.333', 999999, TEST_FILE)
 
 
 class TestFileMaster(LogTestCase):
@@ -23,9 +24,17 @@ class TestFileMaster(LogTestCase):
         self.file_master.stop()
 
     def test_only_one_file_loader_created(self):
-        message = missing_file_message(TEST_IP, TEST_PORT, 'test.txt')
-        self.file_master.tell(message)
-        self.file_master.tell(message)
+        self.file_master.tell(MISSING_MESSAGE)
+        self.file_master.tell(MISSING_MESSAGE)
         sleep(TEST_WAIT)
 
-        self.provider_mock.create_file_loader.assert_called_once_with(message)
+        self.provider_mock.create_file_loader.assert_called_once_with(MISSING_MESSAGE)
+
+    def test_restart_file_loader_when_error(self):
+        self.file_master.tell(MISSING_MESSAGE)
+        sleep(TEST_WAIT)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE)
+
+        self.file_master.tell(load_failed_message(TEST_FILE))
+        sleep(TEST_WAIT)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE)

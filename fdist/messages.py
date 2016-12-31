@@ -2,6 +2,7 @@ BROADCAST_FILES = 'BROADCAST_FILES'
 LOCAL_FILES = 'LOCAL_FILES'
 REMOTE_FILES = 'REMOTE_FILES'
 MISSING_FILE = 'MISSING_FILE'
+LOAD_FAILED_MESSAGE = 'LOAD_FAILED_MESSAGE'
 FILE_REQUEST = 'FILE_REQUEST'
 
 SELF_POKE = {'message': 'self-poke'}
@@ -39,6 +40,13 @@ def missing_file_message(ip, port, missing_file):
         'message': MISSING_FILE,
         'ip': ip,
         'port': port,
+        'file': missing_file
+    }
+
+
+def load_failed_message(missing_file):
+    return {
+        'message': LOAD_FAILED_MESSAGE,
         'file': missing_file
     }
 
