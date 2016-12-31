@@ -15,9 +15,10 @@ class FileLoaderProvider(object):
 class FileLoader(LogActor):
     def __init__(self, missing_file_message):
         super(FileLoader, self).__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.request_message = file_request_message(missing_file_message['file'])
+        missing_file = missing_file_message['file']
+        self.logger = logging.getLogger(missing_file)
+        self.request_message = file_request_message(missing_file)
         self.remote_address = (missing_file_message['ip'], missing_file_message['port'])
 
     def on_start(self):
@@ -29,7 +30,7 @@ class FileLoader(LogActor):
             self.send_file_request()
 
     def send_file_request(self):
-        self.logger.info('requesting file location for [%s]', self.request_message['file'])
+        self.logger.info('requesting file location.')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 

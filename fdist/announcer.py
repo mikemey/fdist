@@ -32,6 +32,7 @@ class Announcer(LogActor):
         self.actor_ref.tell(SELF_POKE)
 
     def broadcast(self):
+        self.logger.debug('broadcasting [%s]', self.message)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.sendto(json.dumps(self.message), self.addr)
