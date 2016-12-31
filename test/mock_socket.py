@@ -1,6 +1,5 @@
-import SocketServer
 import json
-from SocketServer import TCPServer, UDPServer
+from SocketServer import TCPServer, UDPServer, BaseRequestHandler
 from thread import start_new_thread
 
 
@@ -25,7 +24,7 @@ class MockServer(object):
         self.server.server_close()
 
 
-class UDPHandler(SocketServer.BaseRequestHandler):
+class UDPHandler(BaseRequestHandler):
     def handle(self):
         data = self.request[0]
         self.server.data_records.append(json.loads(data))
@@ -36,7 +35,7 @@ class MockUDPServer(MockServer):
     handler_type = UDPHandler
 
 
-class TCPHandler(SocketServer.BaseRequestHandler):
+class TCPHandler(BaseRequestHandler):
     def handle(self):
         data = self.request.recv(1024).strip()
         self.server.data_records.append(json.loads(data))
