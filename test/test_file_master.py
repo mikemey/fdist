@@ -28,4 +28,4 @@ class TestFileMaster(LogTestCase):
         self.file_master.tell(message)
         sleep(TEST_WAIT)
 
-        self.provider_mock.create_file_loader.assert_called_once()
+        self.provider_mock.create_file_loader.assert_called_once_with(message)

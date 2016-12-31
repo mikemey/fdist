@@ -14,5 +14,5 @@ class FileMaster(LogActor):
             f = message['file']
             if f not in self.in_progress_list:
                 self.logger.info('loading file: [%s] from: [%s]', message['file'], message['ip'])
-                self.actor_provider.create_file_loader()
+                self.actor_provider.create_file_loader(message)
                 self.in_progress_list.append(f)
