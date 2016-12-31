@@ -35,5 +35,17 @@ class LocalFiles(LogActor):
                 recv.tell(local_files_message(files))
 
     def local_files(self):
-        file_list = os.listdir(self.localDirectory)
-        return [f for f in file_list if not f.startswith('.')]
+        file_list = []
+        self.flatten_files('', file_list)
+        return file_list
+
+    def flatten_files(self, relative_dir, result):
+        file_list = os.listdir(self.localDirectory + '/' + relative_dir)
+
+        for f in file_list:
+            if f.startswith('.'):
+                continue
+            if os.path.isfile(self.localDirectory + '/' + relative_dir + '/' + f):
+                result.append(relative_dir + '/' + f)
+            if os.path.isdir(self.localDirectory + '/' + relative_dir + '/' + f):
+                self.flatten_files(relative_dir + '/' + f, result)
