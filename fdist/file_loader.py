@@ -1,6 +1,7 @@
 import json
 import logging
 import socket
+from _socket import timeout
 
 from log_actor import LogActor
 from messages import SELF_POKE, file_request_message
@@ -26,13 +27,17 @@ class FileLoader(LogActor):
         self.actor_ref.tell(SELF_POKE)
 
     def on_receive(self, message):
-        if message is SELF_POKE:
-            self.send_file_request()
+        try:
+            if message is SELF_POKE:
+                self.send_file_request()
+        except timeout as to:
+            self.logger.error("failed [%s]", to.message)
 
     def send_file_request(self):
         self.logger.info('requesting file location.')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(2.0)
 
         sock.connect(self.remote_address)
         sock.sendall(json.dumps(self.request_message))
