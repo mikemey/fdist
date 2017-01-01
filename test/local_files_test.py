@@ -76,3 +76,11 @@ class LocalFilesTest(LogTestCase):
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_not_called()
+
+    def test_dont_report_hidden_directories(self):
+        os.makedirs(self.tmpdir + "/.sub_dir")
+        new_files = ['/.sub_dir/sub_file']
+        self.addFiles(new_files)
+        sleep(TEST_WAIT)
+
+        self.receiver.tell.assert_not_called()
