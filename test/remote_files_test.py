@@ -16,7 +16,7 @@ TEST_WAIT = 1.5
 
 TEST_IP = "192.168.254.254"
 TEST_PORT = 12121
-TEST_FILES = ["file_a.txt", "file_b.txt"]
+TEST_FILES = ["/file_a.txt", "/file_b.txt"]
 
 
 class TestRemoteFiles(LogTestCase):
@@ -49,7 +49,7 @@ class TestRemoteFiles(LogTestCase):
 
     def test_forwards_two_new_nodes(self):
         test_port_2 = 32323
-        test_files_2 = ["2_file_a.txt", "2_file_b.txt"]
+        test_files_2 = ["/2_file_a.txt", "/2_file_b.txt"]
 
         self.send_broadcast_from(TEST_IP, broadcast_message(TEST_PORT, TEST_FILES))
         self.send_broadcast_from(TEST_IP, broadcast_message(test_port_2, test_files_2))

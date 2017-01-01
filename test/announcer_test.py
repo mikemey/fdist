@@ -12,7 +12,7 @@ TEST_WAIT = BC_INTERVAL_SEC * 2
 
 TEST_IP = 'some-ip'
 TEST_PORT = 14000
-TEST_FILES = ["file_a.txt", "file_b.txt"]
+TEST_FILES = ["/file_a.txt", "/file_b.txt"]
 
 
 class TestAnnouncer(LogTestCase):
@@ -33,7 +33,7 @@ class TestAnnouncer(LogTestCase):
         self.assertTrue(expected in received, received)
 
     def test_broadcast_with_updated_files(self):
-        files = ["ann_file_1.txt", "ann_file_2.txt"]
+        files = ["/ann_file_1.txt", "/ann_file_2.txt"]
         self.announcer.tell(local_files_message(files))
 
         sleep(TEST_WAIT)

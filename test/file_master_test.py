@@ -10,7 +10,7 @@ from fdist.messages import missing_file_message
 from test.helpers import LogTestCase
 
 TEST_WAIT = 0.5
-TEST_FILE = 'test.txt'
+TEST_FILE = '/test.txt'
 MISSING_MESSAGE = missing_file_message('333.333.333.333', 999999, TEST_FILE)
 
 
