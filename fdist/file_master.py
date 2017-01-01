@@ -21,5 +21,5 @@ class FileMaster(LogActor):
             self.in_progress.remove(message['file'])
 
     def start_file_loader(self, message):
-        self.actor_provider.create_file_loader(message)
+        self.actor_provider.create_file_loader(message, self.actor_ref)
         self.in_progress.append(message['file'])

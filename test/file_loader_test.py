@@ -11,7 +11,8 @@ from helpers import free_port
 from mock_socket import MockServer
 from test.helpers import LogTestCase
 
-TEST_WAIT = 1
+TEST_TIMEOUT = 0.5
+TEST_WAIT = TEST_TIMEOUT * 2
 TEST_FILE = "/file_load_test.txt"
 
 
@@ -32,7 +33,8 @@ class FileLoaderTest(LogTestCase):
         self.mockedServer = FileRequestServer(remote_fe_port)
         file_message = missing_file_message('localhost', remote_fe_port, TEST_FILE)
 
-        self.file_loader = FileLoader.start(file_message)
+        self.parentActor = MagicMock(ref=ActorRef)
+        self.file_loader = FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
 
     def tearDown(self):
         self.file_loader.stop()
@@ -44,12 +46,16 @@ class FileLoaderTest(LogTestCase):
 
         expected = file_request_message(TEST_FILE)
         self.quickEquals(received, expected)
-    #
-    # def test_send_incomplete_message_on_failure(self):
-    #     self.mockedServer.stop()
-    #     sleep(2)
-    #
-    #     self.parentActor.assert_called_once_with(load_failed_message(TEST_FILE))
+
+    def test_send_incomplete_message_on_failure(self):
+        self.file_loader.stop()
+        self.mockedServer.stop()
+
+        file_message = missing_file_message('localhost', free_port(), TEST_FILE)
+        self.file_loader = FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
+        sleep(TEST_WAIT)
+
+        self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
 
     # def test_issue_rsync_request(self):
     #     self.fail('not yet implemented')

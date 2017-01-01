@@ -28,13 +28,13 @@ class FileMasterTest(LogTestCase):
         self.file_master.tell(MISSING_MESSAGE)
         sleep(TEST_WAIT)
 
-        self.provider_mock.create_file_loader.assert_called_once_with(MISSING_MESSAGE)
+        self.provider_mock.create_file_loader.assert_called_once_with(MISSING_MESSAGE, self.file_master)
 
     def test_restart_file_loader_when_error(self):
         self.file_master.tell(MISSING_MESSAGE)
         sleep(TEST_WAIT)
-        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master)
 
         self.file_master.tell(load_failed_message(TEST_FILE))
         sleep(TEST_WAIT)
-        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master)
