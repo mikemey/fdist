@@ -19,7 +19,7 @@ TEST_PORT = 12121
 TEST_FILES = ["/file_a.txt", "/file_b.txt"]
 
 
-class TestRemoteFiles(LogTestCase):
+class RemoteFilesTest(LogTestCase):
     def setUp(self):
         self.broadcast_port = free_port()
 

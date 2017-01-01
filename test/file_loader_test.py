@@ -26,14 +26,13 @@ class FileRequestServer(MockServer):
     handler_type = FileRequestHandler
 
 
-class TestFileLoader(LogTestCase):
+class FileLoaderTest(LogTestCase):
     def setUp(self):
         remote_fe_port = free_port()
         self.mockedServer = FileRequestServer(remote_fe_port)
         file_message = missing_file_message('localhost', remote_fe_port, TEST_FILE)
 
-        self.parentActor = MagicMock(ref=ActorRef)
-        self.file_loader = FileLoader.start(file_message, self.parentActor)
+        self.file_loader = FileLoader.start(file_message)
 
     def tearDown(self):
         self.file_loader.stop()

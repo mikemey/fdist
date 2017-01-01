@@ -13,7 +13,7 @@ TEST_REMOTE_PORT = 999999
 TEST_WAIT = 0.5
 
 
-class TestFileUpdater(LogTestCase):
+class FileUpdaterTest(LogTestCase):
     def setUp(self):
         self.receiver = MagicMock(spec=ActorRef)
         self.filesDiff = FilesDiff.start(self.receiver)

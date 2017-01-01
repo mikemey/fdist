@@ -15,7 +15,7 @@ TEST_PORT = 14000
 TEST_FILES = ["/file_a.txt", "/file_b.txt"]
 
 
-class TestAnnouncer(LogTestCase):
+class AnnouncerTest(LogTestCase):
     def setUp(self):
         broadcast_port = free_port()
         self.mockedSocket = MockUDPServer(broadcast_port)

@@ -14,7 +14,7 @@ TEST_RELOAD_LOCAL_FILES_SEC = 0.2
 TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
 
 
-class TestLocalFiles(LogTestCase):
+class LocalFilesTest(LogTestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.receiver = MagicMock(spec=ActorRef)
