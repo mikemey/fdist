@@ -36,7 +36,7 @@ class FileLoader(LogActor):
                 self.send_file_request()
         except error as socket_error:
             self.logger.error("failed: %s", socket_error)
-            self.parent.tell(load_failed_message(self.request_message['file']))
+            self.parent.tell(load_failed_message(self.request_message['file_id']))
 
     def send_file_request(self):
         self.logger.info('requesting file location.')

@@ -4,6 +4,7 @@ REMOTE_FILES = 'REMOTE_FILES'
 MISSING_FILE = 'MISSING_FILE'
 LOAD_FAILED_MESSAGE = 'LOAD_FAILED_MESSAGE'
 FILE_REQUEST = 'FILE_REQUEST'
+FILE_LOCATION = 'FILE_LOCATION'
 
 SELF_POKE = {'message': 'self-poke'}
 
@@ -51,8 +52,8 @@ def load_failed_message(missing_file):
     }
 
 
-def file_request_message(missing_file):
+def file_request_message(file_id):
     return {
         'message': FILE_REQUEST,
-        'file': missing_file
+        'file_id': file_id
     }
