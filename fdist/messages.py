@@ -57,3 +57,11 @@ def file_request_message(file_id):
         'message': FILE_REQUEST,
         'file_id': file_id
     }
+
+
+def file_location_message(file_id, rsync_path):
+    return {
+        'message': FILE_LOCATION,
+        'file_id': file_id,
+        'rsync_path': rsync_path
+    }
