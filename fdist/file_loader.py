@@ -15,7 +15,7 @@ class FileLoaderProvider(object):
 
 
 class FileLoader(LogActor):
-    def __init__(self, missing_file_message, parent_actor, timeout_sec):
+    def __init__(self, missing_file_message, parent_actor, rsync_actor, timeout_sec):
         super(FileLoader, self).__init__()
 
         missing_file = missing_file_message['file']
@@ -24,6 +24,7 @@ class FileLoader(LogActor):
         self.remote_address = (missing_file_message['ip'], missing_file_message['port'])
 
         self.parent = parent_actor
+        self.rsync_actor = rsync_actor
         self.timeout_sec = timeout_sec
 
     def on_start(self):
@@ -46,4 +47,6 @@ class FileLoader(LogActor):
 
         sock.connect(self.remote_address)
         sock.sendall(json.dumps(self.request_message))
+
+        self.rsync_actor.tell(json.loads(sock.recv(1024)))
         sock.close()

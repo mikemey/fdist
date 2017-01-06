@@ -6,7 +6,7 @@ from mock.mock import MagicMock
 from pykka.actor import ActorRef
 
 from fdist.file_loader import FileLoader
-from fdist.messages import missing_file_message, file_request_message, load_failed_message
+from fdist.messages import missing_file_message, file_request_message, load_failed_message, file_location_message
 from helpers import free_port
 from mock_socket import MockServer
 from test.helpers import LogTestCase
@@ -15,11 +15,14 @@ TEST_TIMEOUT = 0.5
 TEST_WAIT = TEST_TIMEOUT * 2
 TEST_FILE = "/file_load_test.txt"
 
+TEST_FILE_LOCATION_MESSAGE = file_location_message('/dir/file.txt', 'someone@somewhere:~/media/dir/file.txt')
+
 
 class FileRequestHandler(BaseRequestHandler):
     def handle(self):
         data = self.request.recv(1024).strip()
         self.server.data_records.append(json.loads(data))
+        self.request.sendall(json.dumps(TEST_FILE_LOCATION_MESSAGE))
 
 
 class FileRequestServer(MockServer):
@@ -34,7 +37,8 @@ class FileLoaderTest(LogTestCase):
         file_message = missing_file_message('localhost', remote_fe_port, TEST_FILE)
 
         self.parentActor = MagicMock(ref=ActorRef)
-        self.file_loader = FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
+        self.rsyncMockActor = MagicMock(ref=ActorRef)
+        self.file_loader = FileLoader.start(file_message, self.parentActor, self.rsyncMockActor, TEST_TIMEOUT)
 
     def tearDown(self):
         self.file_loader.stop()
@@ -52,10 +56,11 @@ class FileLoaderTest(LogTestCase):
         self.mockedServer.stop()
 
         file_message = missing_file_message('localhost', free_port(), TEST_FILE)
-        self.file_loader = FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
+        self.file_loader = FileLoader.start(file_message, self.parentActor, self.rsyncMockActor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
 
         self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
 
-    # def test_issue_rsync_request(self):
-    #     self.fail('not yet implemented')
+    def test_send_rsync_request(self):
+        sleep(TEST_WAIT)
+        self.rsyncMockActor.tell.assert_called_once_with(TEST_FILE_LOCATION_MESSAGE)
