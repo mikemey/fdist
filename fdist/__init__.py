@@ -10,6 +10,7 @@ from files_diff import FilesDiff
 from globals import *
 from local_files import LocalFiles
 from remote_files import RemoteFiles
+from rsync_wrapper import RsyncWrapper
 
 
 def init_logging(level=LOG_LEVEL):
@@ -22,7 +23,7 @@ def init_logging(level=LOG_LEVEL):
 def main():
     init_logging()
 
-    master = FileMaster.start(FileLoaderProvider())
+    master = FileMaster.start(FileLoaderProvider(), RsyncWrapper.start())
     file_diff = FilesDiff.start(master)
 
     broadcaster = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)

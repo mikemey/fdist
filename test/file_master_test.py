@@ -2,6 +2,7 @@ import tempfile
 from time import sleep
 
 from mock.mock import MagicMock
+from pykka.actor import ActorRef
 
 from fdist.file_loader import FileLoaderProvider
 from fdist.file_master import FileMaster
@@ -18,7 +19,8 @@ class FileMasterTest(LogTestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.provider_mock = MagicMock(spec=FileLoaderProvider)
-        self.file_master = FileMaster.start(self.provider_mock)
+        self.rsync_wrapper = MagicMock(spec=ActorRef)
+        self.file_master = FileMaster.start(self.provider_mock, self.rsync_wrapper)
 
     def tearDown(self):
         self.file_master.stop()
@@ -28,13 +30,14 @@ class FileMasterTest(LogTestCase):
         self.file_master.tell(MISSING_MESSAGE)
         sleep(TEST_WAIT)
 
-        self.provider_mock.create_file_loader.assert_called_once_with(MISSING_MESSAGE, self.file_master)
+        self.provider_mock.create_file_loader.assert_called_once_with(MISSING_MESSAGE, self.file_master,
+                                                                      self.rsync_wrapper)
 
     def test_restart_file_loader_when_error(self):
         self.file_master.tell(MISSING_MESSAGE)
         sleep(TEST_WAIT)
-        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master, self.rsync_wrapper)
 
         self.file_master.tell(load_failed_message(TEST_FILE))
         sleep(TEST_WAIT)
-        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master)
+        self.provider_mock.create_file_loader.assert_called_with(MISSING_MESSAGE, self.file_master, self.rsync_wrapper)

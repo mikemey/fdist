@@ -10,8 +10,8 @@ from messages import SELF_POKE, file_request_message, load_failed_message
 
 class FileLoaderProvider(object):
     @staticmethod
-    def create_file_loader(missing_file_message, parent_actor):
-        return FileLoader.start(missing_file_message, parent_actor, FILE_REQUEST_TIMEOUT)
+    def create_file_loader(missing_file_message, parent_actor, rsync_wrapper):
+        return FileLoader.start(missing_file_message, parent_actor, rsync_wrapper, FILE_REQUEST_TIMEOUT)
 
 
 class FileLoader(LogActor):
