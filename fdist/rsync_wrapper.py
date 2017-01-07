@@ -5,7 +5,7 @@ from _socket import error
 from string import join
 
 from log_actor import LogActor
-from messages import command, FILE_LOCATION
+from messages import command, FILE_LOCATION, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 rsync_params = ['rsync', '-P', '--progress', '--perms', '--chmod=Du=rwx,Dgo=rx,Fa=rw']
 temp_dir = 'tmp/'
@@ -21,7 +21,8 @@ class RsyncWrapper(LogActor):
             rsync_path = message['rsync_path']
             file_id = message['file_id']
             cmd = full_params(rsync_path)
-            self.pull_file(cmd, file_id)
+            result = self.pull_file(cmd, file_id)
+            return SUCCESS_MESSAGE if result == 0 else FAILURE_MESSAGE
 
     def pull_file(self, cmd, file_id):
         try:
@@ -36,7 +37,7 @@ class RsyncWrapper(LogActor):
 
             while True:
                 if proc.poll() is not None:
-                    break
+                    return proc.poll()
 
                 output = proc.stdout.read(1)
                 if output in {'\r', '\n'}:
@@ -48,7 +49,6 @@ class RsyncWrapper(LogActor):
                         matches = re.match(r'\s*(\d+)\s+(\d+)%\s+([^M]+)MB/s\s+(.*)', line)
                         if matches:
                             self.logger.info('%3s%% %6sMB/s %s', matches.group(2), matches.group(3), file_id)
-
                     buf = []
                 else:
                     buf.append(output)

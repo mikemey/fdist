@@ -7,6 +7,8 @@ FILE_REQUEST = 'FILE_REQUEST'
 FILE_LOCATION = 'FILE_LOCATION'
 
 SELF_POKE = {'message': 'self-poke'}
+SUCCESS_MESSAGE = {'message': 'success'}
+FAILURE_MESSAGE = {'message': 'failure'}
 
 
 def command(message): return message['message']
