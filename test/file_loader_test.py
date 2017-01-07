@@ -1,4 +1,7 @@
 import json
+import os
+import shutil
+import tempfile
 from SocketServer import TCPServer, BaseRequestHandler
 from time import sleep
 
@@ -15,9 +18,10 @@ from test.helpers import LogTestCase
 
 TEST_TIMEOUT = 0.5
 TEST_WAIT = TEST_TIMEOUT * 2
-TEST_FILE = '/dir/file_load_test.txt'
+TEST_FILE = '/file_load_test.txt'
+TEST_FILE_ID = '/dir/subdir' + TEST_FILE
 
-TEST_FILE_LOCATION_MESSAGE = file_location_message(TEST_FILE, 'someone@somewhere:~/dir/file_load_test.txt')
+TEST_FILE_LOCATION_MESSAGE = file_location_message(TEST_FILE_ID, 'someone@somewhere:~/dir/file_load_test.txt')
 
 
 class FileRequestHandler(BaseRequestHandler):
@@ -42,33 +46,37 @@ def setup_rsync_response_with(ret_val):
 class FileLoaderTest(LogTestCase):
     def setUp(self):
         self.remote_fe_port = free_port()
-        self.mockedServer = FileRequestServer(self.remote_fe_port)
+        self.share_dir = tempfile.mkdtemp()
+        self.tmp_dir = tempfile.mkdtemp()
+        self.mocked_server = FileRequestServer(self.remote_fe_port)
 
-        self.parentActor = MagicMock(ref=ActorRef)
-        self.rsync_start = RsyncWrapper.start
+        self.parent_actor = MagicMock(ref=ActorRef)
+        self.rsync_start_bak = RsyncWrapper.start
 
     def tearDown(self):
-        RsyncWrapper.start = self.rsync_start
-        self.mockedServer.stop()
+        RsyncWrapper.start = self.rsync_start_bak
+        self.mocked_server.stop()
         ActorRegistry.stop_all()
+        shutil.rmtree(self.share_dir)
+        shutil.rmtree(self.tmp_dir)
 
     def start_file_loader(self):
-        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE)
-        FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
+        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE_ID)
+        FileLoader.start(self.share_dir, self.tmp_dir, file_message, self.parent_actor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
 
     def test_receive_file_request(self):
         self.start_file_loader()
 
-        received = self.mockedServer.received_data()[0]
-        expected = file_request_message(TEST_FILE)
+        received = self.mocked_server.received_data()[0]
+        expected = file_request_message(TEST_FILE_ID)
         self.quickEquals(received, expected)
 
     def test_send_incomplete_message_on_failure(self):
-        self.mockedServer.stop()
+        self.mocked_server.stop()
         self.start_file_loader()
 
-        self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
+        self.parent_actor.tell.assert_called_once_with(load_failed_message(TEST_FILE_ID))
 
     def test_start_and_stop_rsync(self):
         rsync_mock = setup_rsync_response_with(SUCCESS_MESSAGE)
@@ -81,4 +89,13 @@ class FileLoaderTest(LogTestCase):
         setup_rsync_response_with(FAILURE_MESSAGE)
         self.start_file_loader()
 
-        self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
+        self.parent_actor.tell.assert_called_once_with(load_failed_message(TEST_FILE_ID))
+
+    def test_move_completed_file_to_destination(self):
+        with open(self.tmp_dir + TEST_FILE, "w") as f:
+            f.write("FOOBAR")
+
+        setup_rsync_response_with(SUCCESS_MESSAGE)
+        self.start_file_loader()
+
+        self.assertTrue(os.path.exists(self.share_dir + TEST_FILE_ID))
