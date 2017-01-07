@@ -8,30 +8,28 @@ from log_actor import LogActor
 from messages import command, FILE_LOCATION, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 rsync_params = ['rsync', '-P', '--progress', '--perms', '--chmod=Du=rwx,Dgo=rx,Fa=rw']
-temp_dir = 'tmp/'
-
-
-def full_params(file_location):
-    return join(rsync_params + [file_location, temp_dir])
 
 
 class RsyncWrapper(LogActor):
+    def __init__(self, temp_dir):
+        super(RsyncWrapper, self).__init__()
+        self.temp_dir = temp_dir
+
+    def full_params(self, file_location):
+        return join(rsync_params + [file_location, self.temp_dir])
+
     def on_receive(self, message):
         if command(message) is FILE_LOCATION:
             rsync_path = message['rsync_path']
             file_id = message['file_id']
-            cmd = full_params(rsync_path)
+            cmd = self.full_params(rsync_path)
             result = self.pull_file(cmd, file_id)
             return SUCCESS_MESSAGE if result == 0 else FAILURE_MESSAGE
 
     def pull_file(self, cmd, file_id):
         try:
-            proc = subprocess.Popen(cmd,
-                                    shell=True,
-                                    stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE
-                                    )
+            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             buf = []
             latest_timestamp = 0
 
