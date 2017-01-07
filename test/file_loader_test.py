@@ -4,18 +4,20 @@ from time import sleep
 
 from mock.mock import MagicMock
 from pykka.actor import ActorRef
+from pykka.registry import ActorRegistry
 
 from fdist.file_loader import FileLoader
-from fdist.messages import missing_file_message, file_request_message, load_failed_message, file_location_message
+from fdist.messages import *
+from fdist.rsync_wrapper import RsyncWrapper
 from helpers import free_port
 from mock_socket import MockServer
 from test.helpers import LogTestCase
 
 TEST_TIMEOUT = 0.5
 TEST_WAIT = TEST_TIMEOUT * 2
-TEST_FILE = "/file_load_test.txt"
+TEST_FILE = '/dir/file_load_test.txt'
 
-TEST_FILE_LOCATION_MESSAGE = file_location_message('/dir/file.txt', 'someone@somewhere:~/media/dir/file.txt')
+TEST_FILE_LOCATION_MESSAGE = file_location_message(TEST_FILE, 'someone@somewhere:~/media/dir/file_load_test.txt')
 
 
 class FileRequestHandler(BaseRequestHandler):
@@ -32,35 +34,54 @@ class FileRequestServer(MockServer):
 
 class FileLoaderTest(LogTestCase):
     def setUp(self):
-        remote_fe_port = free_port()
-        self.mockedServer = FileRequestServer(remote_fe_port)
-        file_message = missing_file_message('localhost', remote_fe_port, TEST_FILE)
+        self.remote_fe_port = free_port()
+        self.mockedServer = FileRequestServer(self.remote_fe_port)
 
         self.parentActor = MagicMock(ref=ActorRef)
-        self.rsyncMockActor = MagicMock(ref=ActorRef)
-        self.file_loader = FileLoader.start(file_message, self.parentActor, self.rsyncMockActor, TEST_TIMEOUT)
+        self.rsync_start = RsyncWrapper.start
 
     def tearDown(self):
-        self.file_loader.stop()
+        RsyncWrapper.start = self.rsync_start
         self.mockedServer.stop()
+        ActorRegistry.stop_all()
 
     def test_receive_file_request(self):
+        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE)
+        FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
-        received = self.mockedServer.received_data()[0]
 
+        received = self.mockedServer.received_data()[0]
         expected = file_request_message(TEST_FILE)
         self.quickEquals(received, expected)
 
     def test_send_incomplete_message_on_failure(self):
-        self.file_loader.stop()
         self.mockedServer.stop()
 
-        file_message = missing_file_message('localhost', free_port(), TEST_FILE)
-        self.file_loader = FileLoader.start(file_message, self.parentActor, self.rsyncMockActor, TEST_TIMEOUT)
+        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE)
+        FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
 
         self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
 
-    def test_send_rsync_request(self):
+    def test_start_and_stop_rsync(self):
+        rsync_mock = MagicMock(ref=ActorRef)
+        rsync_mock.ask = MagicMock(return_value=SUCCESS_MESSAGE)
+        RsyncWrapper.start = MagicMock(return_value=rsync_mock)
+
+        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE)
+        FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
-        self.rsyncMockActor.tell.assert_called_once_with(TEST_FILE_LOCATION_MESSAGE)
+
+        rsync_mock.ask.assert_called_once_with(TEST_FILE_LOCATION_MESSAGE)
+        rsync_mock.stop.assert_called_once()
+
+    def test_send_incomplete_message_on_rsync_failure(self):
+        rsync_mock = MagicMock(ref=ActorRef)
+        rsync_mock.ask = MagicMock(return_value=FAILURE_MESSAGE)
+        RsyncWrapper.start = MagicMock(return_value=rsync_mock)
+
+        file_message = missing_file_message('localhost', self.remote_fe_port, TEST_FILE)
+        FileLoader.start(file_message, self.parentActor, TEST_TIMEOUT)
+        sleep(TEST_WAIT)
+
+        self.parentActor.tell.assert_called_once_with(load_failed_message(TEST_FILE))
