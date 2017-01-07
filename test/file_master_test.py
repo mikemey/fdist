@@ -3,6 +3,7 @@ from time import sleep
 
 from mock.mock import MagicMock
 from pykka.actor import ActorRef
+from pykka.registry import ActorRegistry
 
 from fdist.file_loader import FileLoaderProvider
 from fdist.file_master import FileMaster
@@ -23,7 +24,7 @@ class FileMasterTest(LogTestCase):
         self.file_master = FileMaster.start(self.provider_mock, self.rsync_wrapper)
 
     def tearDown(self):
-        self.file_master.stop()
+        ActorRegistry.stop_all()
 
     def test_only_one_file_loader_created(self):
         self.file_master.tell(MISSING_MESSAGE)

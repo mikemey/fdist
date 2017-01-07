@@ -2,6 +2,7 @@ from time import sleep
 
 from mock.mock import MagicMock
 from pykka.actor import ActorRef
+from pykka.registry import ActorRegistry
 
 from fdist.files_diff import FilesDiff
 from fdist.messages import local_files_message, remote_files_message, missing_file_message
@@ -19,7 +20,7 @@ class FileUpdaterTest(LogTestCase):
         self.filesDiff = FilesDiff.start(self.receiver)
 
     def tearDown(self):
-        self.filesDiff.stop()
+        ActorRegistry.stop_all()
 
     def test_report_missing_file(self):
         files = ["/lala.txt", "/li_li.txt"]

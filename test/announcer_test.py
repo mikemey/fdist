@@ -1,5 +1,7 @@
 from time import sleep
 
+from pykka.registry import ActorRegistry
+
 from fdist.announcer import Announcer
 from fdist.messages import broadcast_message, local_files_message
 from helpers import free_port
@@ -22,7 +24,7 @@ class AnnouncerTest(LogTestCase):
         self.announcer = Announcer.start(TEST_PORT, broadcast_port, BC_INTERVAL_SEC)
 
     def tearDown(self):
-        self.announcer.stop()
+        ActorRegistry.stop_all()
         self.mockedSocket.stop()
 
     def test_received_broadcast(self):

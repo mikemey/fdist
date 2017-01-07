@@ -5,6 +5,7 @@ from time import sleep
 
 from mock import MagicMock
 from pykka.actor import ActorRef
+from pykka.registry import ActorRegistry
 
 from fdist.local_files import LocalFiles
 from fdist.messages import local_files_message
@@ -21,7 +22,7 @@ class LocalFilesTest(LogTestCase):
         self.lfs = LocalFiles.start([self.receiver], self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
 
     def tearDown(self):
-        self.lfs.stop()
+        ActorRegistry.stop_all()
         shutil.rmtree(self.tmpdir)
 
     def addFiles(self, filenames):

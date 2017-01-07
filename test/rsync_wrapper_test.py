@@ -1,6 +1,7 @@
 import subprocess
 
 from mock.mock import MagicMock
+from pykka.registry import ActorRegistry
 
 from fdist.messages import file_location_message, SUCCESS_MESSAGE, FAILURE_MESSAGE
 from fdist.rsync_wrapper import RsyncWrapper
@@ -19,7 +20,7 @@ class RsyncWrapperTest(LogTestCase):
         self.rsync = RsyncWrapper.start()
 
     def tearDown(self):
-        self.rsync.stop()
+        ActorRegistry.stop_all()
 
     def test_send_success_message(self):
         popen_mock = create_popen_mock(0)
