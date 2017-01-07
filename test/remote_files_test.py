@@ -12,7 +12,7 @@ from fdist.remote_files import RemoteFiles
 from helpers import free_port
 from test.helpers import LogTestCase
 
-TEST_WAIT = 1.5
+TEST_WAIT = 0.5
 
 TEST_IP = "192.168.254.254"
 TEST_PORT = 12121
@@ -57,3 +57,16 @@ class RemoteFilesTest(LogTestCase):
 
         self.receiver.tell.assert_any_call(remote_files_message(TEST_IP, TEST_PORT, TEST_FILES))
         self.receiver.tell.assert_any_call(remote_files_message(TEST_IP, test_port_2, test_files_2))
+
+    def test_no_reaction_on_unknown_message(self):
+        payload = 'bla bla bla'
+        udp_packet = IP(src=TEST_IP) / UDP(dport=self.broadcast_port) / payload
+        sendrecv.send(udp_packet)
+
+        sleep(TEST_WAIT)
+        self.receiver.tell.assert_not_called()
+
+        self.send_broadcast_from(broadcast_message(TEST_PORT, TEST_FILES))
+        sleep(TEST_WAIT)
+
+        self.receiver.tell.assert_called_with(remote_files_message(TEST_IP, TEST_PORT, TEST_FILES))

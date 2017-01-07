@@ -1,7 +1,6 @@
 import json
 import logging
 import socket
-from _socket import timeout
 from thread import start_new_thread
 
 from fdist.messages import remote_files_message
@@ -38,7 +37,7 @@ class RemoteFiles(object):
                         msg = json.loads(message)
                         port, files = msg['port'], msg['files']
                         self.receiver.tell(remote_files_message(ip, port, files))
-                except timeout:
+                except StandardError:
                     pass
         finally:
             self.socket.close()
