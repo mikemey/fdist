@@ -8,13 +8,21 @@ from fdist.messages import remote_files_message
 OWN_IP = socket.gethostbyname(socket.gethostname())
 
 
+def setup_datagram_socket(port):
+    sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sck.settimeout(1.0)
+    sck.bind(('', port))
+    return sck
+
+
 class RemoteFiles(object):
     def __init__(self, receiver, broadcast_port):
         super(RemoteFiles, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.running = True
 
-        self.socket = self.setup_socket(broadcast_port)
+        self.socket = setup_datagram_socket(broadcast_port)
         self.logger.debug("socket opened [%s]", broadcast_port)
         self.receiver = receiver
 
@@ -42,11 +50,3 @@ class RemoteFiles(object):
         finally:
             self.socket.close()
             self.logger.info('stopped')
-
-    @staticmethod
-    def setup_socket(broadcast_port):
-        sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sck.settimeout(1.0)
-        sck.bind(('', broadcast_port))
-        return sck

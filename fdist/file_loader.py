@@ -51,7 +51,6 @@ class FileLoader(LogActor):
     def send_file_request(self):
         self.logger.debug('requesting file location.')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.settimeout(self.timeout_sec)
         try:
             sock.connect(self.remote_address)
