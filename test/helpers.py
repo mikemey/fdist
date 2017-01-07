@@ -1,5 +1,4 @@
 import logging
-import random
 import socket
 from unittest import TestCase
 
@@ -34,21 +33,12 @@ class AllItemsIn:
         return "Any(%s)" % self.expected
 
 
-r = random.Random()
-
-
 def free_port():
-    distance = r.randint(1, 20)
-    start = 15000 + distance
-    while True:
-        try:
-            print "try socket", start
-            sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sck.settimeout(1.0)
-            sck.bind(('', start))
-            return start
-        except IOError:
-            start += distance
-        finally:
-            sck.close()
+    try:
+        sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sck.settimeout(0.1)
+        sck.bind(('', 0))
+        return sck.getsockname()[1]
+    finally:
+        sck.close()
