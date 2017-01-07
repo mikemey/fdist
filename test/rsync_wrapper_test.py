@@ -18,9 +18,11 @@ def create_popen_mock(return_value):
 class RsyncWrapperTest(LogTestCase):
     def setUp(self):
         self.rsync = RsyncWrapper.start()
+        self.subprocess_popen = subprocess.Popen
 
     def tearDown(self):
         ActorRegistry.stop_all()
+        subprocess.Popen = self.subprocess_popen
 
     def test_send_success_message(self):
         popen_mock = create_popen_mock(0)
