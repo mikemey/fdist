@@ -34,8 +34,8 @@ class AllItemsIn:
 
 
 def free_port():
+    sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        sck = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sck.settimeout(0.1)
         sck.bind(('', 0))
