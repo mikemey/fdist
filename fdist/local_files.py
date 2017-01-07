@@ -40,12 +40,16 @@ class LocalFiles(LogActor):
         return file_list
 
     def flatten_files(self, relative_dir, result):
-        file_list = os.listdir(self.localDirectory + '/' + relative_dir)
+        directory_full_path = self.localDirectory + '/' + relative_dir
+        file_list = os.listdir(directory_full_path)
 
         for f in file_list:
             if f.startswith('.'):
                 continue
-            if os.path.isfile(self.localDirectory + '/' + relative_dir + '/' + f):
-                result.append(relative_dir + '/' + f)
-            if os.path.isdir(self.localDirectory + '/' + relative_dir + '/' + f):
-                self.flatten_files(relative_dir + '/' + f, result)
+            file_id = relative_dir + '/' + f
+            file_full_path = directory_full_path + '/' + f
+
+            if os.path.isfile(file_full_path):
+                result.append(file_id)
+            if os.path.isdir(file_full_path):
+                self.flatten_files(file_id, result)
