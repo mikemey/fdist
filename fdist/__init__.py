@@ -25,7 +25,7 @@ def main():
     init_logging()
 
     FileInfo.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
-    master = FileMaster.start(FileLoaderProvider(), RsyncWrapper.start(TMP_DIR))
+    master = FileMaster.start(FileLoaderProvider())
     file_diff = FilesDiff.start(master)
 
     broadcaster = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)

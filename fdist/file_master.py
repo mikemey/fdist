@@ -3,11 +3,10 @@ from messages import MISSING_FILE, command, LOAD_FAILED_MESSAGE
 
 
 class FileMaster(LogActor):
-    def __init__(self, actor_provider, rsync_wrapper):
+    def __init__(self, actor_provider):
         super(FileMaster, self).__init__()
 
         self.actor_provider = actor_provider
-        self.rsync_wrapper = rsync_wrapper
         self.in_progress = []
 
     def on_receive(self, message):
@@ -22,5 +21,5 @@ class FileMaster(LogActor):
             self.in_progress.remove(message['file'])
 
     def start_file_loader(self, message):
-        self.actor_provider.create_file_loader(message, self.actor_ref, self.rsync_wrapper)
+        self.actor_provider.create_file_loader(message, self.actor_ref)
         self.in_progress.append(message['file'])
