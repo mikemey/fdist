@@ -1,6 +1,7 @@
 import json
 import socket
-from _socket import timeout
+from _socket import timeout, error
+from time import sleep
 
 from log_actor import LogActor
 from messages import SELF_POKE, command, FILE_REQUEST, file_location_message
@@ -13,6 +14,17 @@ def setup_socket(port):
     sck.bind(('', port))
     sck.listen(1)
     return sck
+
+
+def read_data_from(connection):
+    tries = 3
+    while tries:
+        tries -= 1
+        try:
+            return connection.recv(1024)
+        except error:
+            sleep(0.1)
+    return None
 
 
 class FileInfo(LogActor):
@@ -43,7 +55,7 @@ class FileInfo(LogActor):
     def server_read(self):
         connection, (ip, _) = self.socket.accept()
         try:
-            data = connection.recv(1024)
+            data = read_data_from(connection)
             message = json.loads(data)
             if command(message) == FILE_REQUEST:
                 self.logger.info("received request from %s : %s", ip, message)
