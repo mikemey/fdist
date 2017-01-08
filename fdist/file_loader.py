@@ -76,5 +76,6 @@ class FileLoader(LogActor):
         dest_folder = self.share_dir + file_id[:last_slash_ix]
         dest = self.share_dir + file_id
 
-        os.makedirs(dest_folder)
+        if not os.path.exists(dest_folder):
+            os.makedirs(dest_folder)
         shutil.move(src, dest)
