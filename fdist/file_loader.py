@@ -43,10 +43,11 @@ class FileLoader(LogActor):
                 if rsync_result == FAILURE_MESSAGE:
                     raise error('rsync failed')
                 self.move_to_target(file_location_message)
-                self.stop()
         except StandardError as _error:
             self.logger.error("failed: %s", _error)
             self.parent.tell(load_failed_message(self.request_message['file_id']))
+        finally:
+            self.stop()
 
     def send_file_request(self):
         self.logger.debug('requesting file location.')
