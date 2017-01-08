@@ -11,14 +11,14 @@ class FileMaster(LogActor):
         self.in_progress = []
 
     def on_receive(self, message):
-        if command(message) is MISSING_FILE:
+        if command(message) == MISSING_FILE:
             missing_file = message['file']
 
             if missing_file not in self.in_progress:
                 self.logger.info('loading file: [%s] from: [%s]', missing_file, message['ip'])
                 self.start_file_loader(message)
 
-        if command(message) is LOAD_FAILED_MESSAGE:
+        if command(message) == LOAD_FAILED_MESSAGE:
             self.in_progress.remove(message['file'])
 
     def start_file_loader(self, message):

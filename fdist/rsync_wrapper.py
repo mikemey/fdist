@@ -19,7 +19,7 @@ class RsyncWrapper(LogActor):
         return join(rsync_params + [file_location, self.temp_dir])
 
     def on_receive(self, message):
-        if command(message) is FILE_LOCATION:
+        if command(message) == FILE_LOCATION:
             rsync_path = message['rsync_path']
             file_id = message['file_id']
             cmd = self.full_params(rsync_path)

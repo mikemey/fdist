@@ -20,7 +20,7 @@ class Announcer(LogActor):
         self.poke()
 
     def on_receive(self, message):
-        if command(message) is LOCAL_FILES:
+        if command(message) == LOCAL_FILES:
             self.message = broadcast_message(self.fe_port, message['files'])
 
         if message is SELF_POKE:
