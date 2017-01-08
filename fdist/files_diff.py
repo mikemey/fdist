@@ -11,8 +11,10 @@ class FilesDiff(LogActor):
 
     def on_receive(self, message):
         if command(message) == LOCAL_FILES:
-            self.logger.info('new local file list: %s', message['files'])
-            self.local_files |= set(message['files'])
+            files = message['files']
+            self.logger.info('local file count: %s', len(files))
+            self.logger.debug('%s', str(files)[:120])
+            self.local_files |= set(files)
         if command(message) == REMOTE_FILES:
             self.logger.debug('remote file list: %s', message['files'])
             self.update_remote_files(message)
