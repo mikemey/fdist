@@ -18,10 +18,12 @@ def init_logging(level=LOG_LEVEL):
                         format='%(asctime)s %(levelname)5s [%(name)-12s] %(message)s',
                         stream=sys.stdout
                         )
+    return logging.getLogger('main')
 
 
 def main():
-    init_logging()
+    logger = init_logging()
+    logger.info("receive only: %s", RECEIVER_ONLY)
 
     master = FileMaster.start(FileLoaderProvider())
     file_diff = FilesDiff.start(master)
@@ -35,11 +37,11 @@ def main():
     LocalFiles.start(local_file_receiver, SHARE_DIR, LOCAL_FILES_INTERVAL_SEC)
     remote = RemoteFiles(file_diff, BROADCAST_PORT).start()
 
-    logging.info('FDIST started')
+    logger.info('FDIST started')
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logging.info('FDIST stopping...')
+        logger.info('FDIST stopping...')
         remote.stop()
         ActorRegistry.stop_all()
