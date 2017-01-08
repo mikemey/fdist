@@ -43,7 +43,7 @@ class FileLoader(LogActor):
                 if rsync_result == FAILURE_MESSAGE:
                     raise error('rsync failed')
                 self.move_to_target(file_location_message)
-
+                self.stop()
         except error as socket_error:
             self.logger.error("failed: %s", socket_error)
             self.parent.tell(load_failed_message(self.request_message['file_id']))
