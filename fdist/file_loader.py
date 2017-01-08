@@ -61,7 +61,7 @@ class FileLoader(LogActor):
 
     def rsync_result(self, file_location_message):
         self.logger.debug('starting file transfer.')
-        rsync = RsyncWrapper.start(TMP_DIR)
+        rsync = RsyncWrapper.start(self.tmp_dir)
         try:
             result = rsync.ask(file_location_message)
             return result
