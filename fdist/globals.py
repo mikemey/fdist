@@ -11,3 +11,4 @@ FILE_REQUEST_TIMEOUT = 2.0
 SHARE_DIR = "tmp"
 TMP_DIR = "tmp/.tmp"
 RSYNC_PREFIX = "someone@somewhere:~"
+RECEIVER_ONLY = False

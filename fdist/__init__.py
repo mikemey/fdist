@@ -23,12 +23,16 @@ def init_logging(level=LOG_LEVEL):
 def main():
     init_logging()
 
-    FileInfo.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
     master = FileMaster.start(FileLoaderProvider())
     file_diff = FilesDiff.start(master)
 
-    broadcaster = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
-    LocalFiles.start([broadcaster, file_diff], SHARE_DIR, LOCAL_FILES_INTERVAL_SEC)
+    local_file_receiver = [file_diff]
+    if not RECEIVER_ONLY:
+        FileInfo.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
+        file_announcer = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
+        local_file_receiver.append(file_announcer)
+
+    LocalFiles.start(local_file_receiver, SHARE_DIR, LOCAL_FILES_INTERVAL_SEC)
     remote = RemoteFiles(file_diff, BROADCAST_PORT).start()
 
     logging.info('FDIST started')
