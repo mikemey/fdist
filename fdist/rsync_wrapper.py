@@ -1,18 +1,21 @@
+import logging
 import re
 import subprocess
 import time
 from _socket import error
 from string import join
 
-from log_actor import LogActor
+import pykka
+
 from messages import command, FILE_LOCATION, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 rsync_params = ['rsync', '-P', '--progress', '--perms', '--chmod=Du=rwx,Dgo=rx,Fa=rw']
 
 
-class RsyncWrapper(LogActor):
+class RsyncWrapper(pykka.ThreadingActor):
     def __init__(self, temp_dir):
         super(RsyncWrapper, self).__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.temp_dir = temp_dir
 
     def full_params(self, file_location):
