@@ -11,7 +11,6 @@ from files_diff import FilesDiff
 from globals import *
 from local_files import LocalFiles
 from remote_files import RemoteFiles
-from rsync_wrapper import RsyncWrapper
 
 
 def init_logging(level=LOG_LEVEL):
