@@ -4,6 +4,7 @@ import time
 from pykka.registry import ActorRegistry
 
 from announcer import Announcer
+from file_info import FileInfo
 from file_loader import FileLoaderProvider
 from file_master import FileMaster
 from files_diff import FilesDiff
@@ -23,6 +24,7 @@ def init_logging(level=LOG_LEVEL):
 def main():
     init_logging()
 
+    FileInfo.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
     master = FileMaster.start(FileLoaderProvider(), RsyncWrapper.start())
     file_diff = FilesDiff.start(master)
 
