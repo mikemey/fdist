@@ -16,6 +16,7 @@ from remote_files import RemoteFiles
 def init_logging(level=LOG_LEVEL):
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)5s [%(name)-12s] %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
                         stream=sys.stdout
                         )
     return logging.getLogger('main')
