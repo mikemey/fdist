@@ -12,20 +12,25 @@ from messages import command, FILE_LOCATION, SUCCESS_MESSAGE, FAILURE_MESSAGE
 rsync_params = ['rsync', '-P', '--progress', '--perms', '--chmod=Du=rwx,Dgo=rx,Fa=rw']
 
 
+def escape_rsync_path(message):
+    return '"' + message['rsync_path'].replace(' ', '\ ') + '"'
+
+
 class RsyncWrapper(pykka.ThreadingActor):
     def __init__(self, temp_dir):
         super(RsyncWrapper, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.temp_dir = temp_dir
 
-    def full_params(self, file_location):
-        return join(rsync_params + [file_location, self.temp_dir])
+    def full_params(self, rsync_path):
+        return join(rsync_params + [rsync_path, self.temp_dir])
 
     def on_receive(self, message):
         if command(message) == FILE_LOCATION:
-            rsync_path = message['rsync_path']
+            rsync_path = escape_rsync_path(message)
             file_id = message['file_id']
             cmd = self.full_params(rsync_path)
+
             result = self.pull_file(cmd, file_id)
             return SUCCESS_MESSAGE if result == 0 else FAILURE_MESSAGE
 
