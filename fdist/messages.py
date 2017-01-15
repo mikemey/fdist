@@ -5,6 +5,7 @@ MISSING_FILE = 'MISSING_FILE'
 LOAD_FAILED_MESSAGE = 'LOAD_FAILED_MESSAGE'
 FILE_REQUEST = 'FILE_REQUEST'
 FILE_LOCATION = 'FILE_LOCATION'
+STORE_DATA = 'STORE_DATA'
 
 SELF_POKE = {'message': 'self-poke'}
 SUCCESS_MESSAGE = {'message': 'success'}
@@ -66,4 +67,21 @@ def file_location_message(file_id, rsync_path):
         'message': FILE_LOCATION,
         'file_id': file_id,
         'rsync_path': rsync_path
+    }
+
+
+def file_info_message(file_id, pip_length, hashes):
+    return {
+        'message': FILE_LOCATION,
+        'file_id': file_id,
+        'pip_length': pip_length,
+        'hashes': hashes
+    }
+
+
+def store_data_message(pips_ix, data):
+    return {
+        'message': STORE_DATA,
+        'pips_ix': pips_ix,
+        'data': data
     }
