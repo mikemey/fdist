@@ -41,8 +41,26 @@ class FileStore(LogActor):
     def on_receive(self, message):
         if command(message) == STORE_DATA:
             pip_data = message['data']
+            pips_ix = message['pips_ix']
             self.logger.debug('new pip, length [%s]', len(pip_data))
-            if len(pip_data) != self.pip_length():
-                raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_length(), len(pip_data)))
-            else:
-                self.logger.debug('no error')
+
+            self.check_pip(pips_ix, pip_data)
+            self.write_pip(pips_ix, pip_data)
+
+    def check_pip(self, ix, data):
+        if ix < 0 or ix >= self.pip_count():
+            raise IOError('Pip index out of bounds [%s]' % ix)
+
+        is_not_last_pip = ix != (self.pip_count() - 1)
+        if is_not_last_pip and len(data) != self.pip_length():
+            raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_length(), len(data)))
+
+    def write_pip(self, ix, data):
+        with FileIO(self.file_cache, 'r+') as f:
+            offset = ix * self.pip_length()
+            f.seek(offset)
+            f.write(data)
+
+            is_last_pip = ix == self.pip_count() - 1
+            if is_last_pip:
+                f.truncate()
