@@ -20,7 +20,7 @@ class FileStore(LogActor):
         self.file_cache = self.temp_dir + "/" + md5_hash(file_info_message['file_id'])
         self.file_info = file_info_message
 
-    def pip_length(self):
+    def pip_default_length(self):
         return self.file_info['pip_length']
 
     def pip_count(self):
@@ -31,7 +31,7 @@ class FileStore(LogActor):
         if not os.path.isfile(self.file_cache):
             self.logger.debug('reserving cache file [%s]', self.file_cache)
             with FileIO(self.file_cache, 'w') as f:
-                empty = bytes('X' * self.pip_length())
+                empty = bytes('X' * self.pip_default_length())
                 for i in range(0, self.pip_count()):
                     f.write(empty)
             self.logger.debug('reserving cache file done.')
@@ -51,13 +51,16 @@ class FileStore(LogActor):
         if ix < 0 or ix >= self.pip_count():
             raise IOError('Pip index out of bounds [%s]' % ix)
 
-        is_not_last_pip = ix != (self.pip_count() - 1)
-        if is_not_last_pip and len(data) != self.pip_length():
-            raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_length(), len(data)))
+        data_len = len(data)
+        if data_len != self.pip_default_length():
+            is_last_pip = ix == (self.pip_count() - 1)
+            pip_too_short = data_len < self.pip_default_length()
+            if not (is_last_pip and pip_too_short):
+                raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_default_length(), len(data)))
 
     def write_pip(self, ix, data):
         with FileIO(self.file_cache, 'r+') as f:
-            offset = ix * self.pip_length()
+            offset = ix * self.pip_default_length()
             f.seek(offset)
             f.write(data)
 

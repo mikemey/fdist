@@ -18,10 +18,7 @@ PIP_2 = 'b' * TEST_PIP_LENGTH
 PIP_3 = '3' * TEST_PIP_LENGTH
 
 TEST_FILE_ID = '/test/lala.txt'
-PIP_1_HASH = md5_hash(PIP_1)
-PIP_2_HASH = md5_hash(PIP_2)
-PIP_3_HASH = md5_hash(PIP_3)
-TEST_FILE_INFO = file_info_message(TEST_FILE_ID, TEST_PIP_LENGTH, [PIP_1_HASH, PIP_2_HASH, PIP_3_HASH])
+TEST_FILE_INFO = file_info_message(TEST_FILE_ID, TEST_PIP_LENGTH, ['hash1', 'hash2', 'hash3'])
 
 
 class FileStoreTest(LogTestCase):
@@ -39,6 +36,11 @@ class FileStoreTest(LogTestCase):
     def assert_file_cache(self, expected_data):
         with open(self.full_file_path(), 'r') as f:
             self.quickEquals(f.read(), expected_data)
+
+    def assert_error(self, pip_ix, pip, expected_message):
+        with raises(IOError) as io_error:
+            self.file_store.ask(store_data_message(pip_ix, pip))
+        self.quickEquals(io_error.exconly(), expected_message)
 
     def test_reserve_file_when_not_exists(self):
         print os.listdir(self.temp_dir)
@@ -58,20 +60,26 @@ class FileStoreTest(LogTestCase):
         self.assert_file_cache(PIP_1 + FILLER_PIP * 2)
 
     def test_pip_length_too_long(self):
-        too_long = 'pip_too_long'
+        too_long = 'A' * (TEST_PIP_LENGTH + 1)
         expected_message = 'IOError: Pip length has to be [%s]: actual: [%s]' % (TEST_PIP_LENGTH, len(too_long))
-        with raises(IOError) as io_error:
-            self.file_store.ask(store_data_message(0, too_long))
-
-        self.quickEquals(io_error.exconly(), expected_message)
+        self.assert_error(0, too_long, expected_message)
 
     def test_pip_length_too_short(self):
-        too_short = 'pip_'
+        too_short = 'A' * (TEST_PIP_LENGTH - 1)
         expected_message = 'IOError: Pip length has to be [%s]: actual: [%s]' % (TEST_PIP_LENGTH, len(too_short))
-        with raises(IOError) as io_error:
-            self.file_store.ask(store_data_message(0, too_short))
+        self.assert_error(0, too_short, expected_message)
 
-        self.quickEquals(io_error.exconly(), expected_message)
+    def test_truncate_file_when_last_pip(self):
+        end_pip = 'A' * (TEST_PIP_LENGTH - 1)
+        self.file_store.ask(store_data_message(0, PIP_1))
+        self.file_store.ask(store_data_message(2, end_pip))
+        self.file_store.ask(store_data_message(1, PIP_2))
+        self.assert_file_cache(PIP_1 + PIP_2 + end_pip)
+
+    def test_last_pip_too_long(self):
+        end_pip = 'A' * (TEST_PIP_LENGTH + 1)
+        expected_message = 'IOError: Pip length has to be [%s]: actual: [%s]' % (TEST_PIP_LENGTH, len(end_pip))
+        self.assert_error(2, end_pip, expected_message)
 
     def test_store_pip(self):
         self.file_store.ask(store_data_message(0, PIP_1))
@@ -80,13 +88,4 @@ class FileStoreTest(LogTestCase):
 
     def test_pip_ix_out_of_bounds(self):
         expected_message = 'IOError: Pip index out of bounds [3]'
-        with raises(IOError) as io_error:
-            self.file_store.ask(store_data_message(3, PIP_3))
-        self.quickEquals(io_error.exconly(), expected_message)
-
-    def test_truncate_last_pip(self):
-        end_pip = "last"
-        self.file_store.ask(store_data_message(0, PIP_1))
-        self.file_store.ask(store_data_message(2, end_pip))
-        self.file_store.ask(store_data_message(1, PIP_2))
-        self.assert_file_cache(PIP_1 + PIP_2 + end_pip)
+        self.assert_error(3, PIP_3, expected_message)
