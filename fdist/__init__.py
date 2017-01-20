@@ -4,7 +4,7 @@ import time
 from pykka.registry import ActorRegistry
 
 from announcer import Announcer
-from exchange.file_info_new import FileInfoServer
+from exchange.file_info import FileInfoServer
 from file_loader import FileLoaderProvider
 from file_master import FileMaster
 from files_diff import FilesDiff

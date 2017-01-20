@@ -5,7 +5,7 @@ import tempfile
 
 from pykka.registry import ActorRegistry
 
-from fdist.exchange.file_info_new import FileInfoServer
+from fdist.exchange.file_info import FileInfoServer
 from fdist.messages import file_info_message, file_request_message
 from fdist.globals import md5_hash
 from test.helpers import LogTestCase, free_port
