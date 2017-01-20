@@ -4,7 +4,7 @@ import time
 from pykka.registry import ActorRegistry
 
 from announcer import Announcer
-from file_info import FileInfo
+from exchange.file_info_new import FileInfoServer
 from file_loader import FileLoaderProvider
 from file_master import FileMaster
 from files_diff import FilesDiff
@@ -31,7 +31,7 @@ def main():
 
     local_file_receiver = [file_diff]
     if not RECEIVER_ONLY:
-        FileInfo.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
+        FileInfoServer.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
         file_announcer = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
         local_file_receiver.append(file_announcer)
 

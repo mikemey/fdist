@@ -3,8 +3,11 @@ import socket
 from _socket import timeout, error
 from time import sleep
 
-from log_actor import LogActor
-from messages import SELF_POKE, command, FILE_REQUEST, file_location_message
+import pykka
+
+from fdist.globals import md5_hash
+from fdist.log_actor import LogActor
+from fdist.messages import SELF_POKE, command, FILE_REQUEST, file_info_message
 
 
 def setup_socket(port):
@@ -16,26 +19,15 @@ def setup_socket(port):
     return sck
 
 
-def read_data_from(connection):
-    tries = 3
-    while tries:
-        tries -= 1
-        try:
-            return connection.recv(1024)
-        except error:
-            sleep(0.1)
-    return None
-
-
-class FileInfo(LogActor):
-    def __init__(self, fe_port, rsync_prefix):
-        super(FileInfo, self).__init__()
+class FileInfoServer(LogActor):
+    def __init__(self, fe_port, local_dir, pip_size):
+        super(FileInfoServer, self).__init__()
         self.socket = setup_socket(fe_port)
 
-        self.rsync_prefix = rsync_prefix
+        self.router = FileInfoRouter.start(local_dir, pip_size)
 
     def on_start(self):
-        super(FileInfo, self).on_start()
+        super(FileInfoServer, self).on_start()
         self.actor_ref.tell(SELF_POKE)
 
     def on_stop(self):
@@ -54,13 +46,67 @@ class FileInfo(LogActor):
 
     def server_read(self):
         connection, (ip, _) = self.socket.accept()
+        self.router.tell(accept_message(connection, ip))
+
+
+def read_data_from(connection):
+    tries = 3
+    while tries:
+        tries -= 1
         try:
-            data = read_data_from(connection)
-            message = json.loads(data)
-            if command(message) == FILE_REQUEST:
-                self.logger.info("received request from %s : %s", ip, message)
-                file_id = message['file_id']
-                location_message = file_location_message(file_id, self.rsync_prefix + file_id)
-                connection.sendall(json.dumps(location_message))
+            return connection.recv(1024)
+        except error:
+            sleep(0.1)
+    return None
+
+
+def accept_message(connection, ip, parsed_message=''): return {
+    'connection': connection,
+    'ip': ip,
+    'parsed': parsed_message
+}
+
+
+class FileInfoRouter(pykka.ThreadingActor):
+    def __init__(self, local_dir, pip_size):
+        super(FileInfoRouter, self).__init__()
+        self.info_actor = FileInfoActor.start(local_dir, pip_size)
+
+    def on_receive(self, connection_message):
+        connection = connection_message['connection']
+        ip = connection_message['ip']
+
+        data = read_data_from(connection)
+        request_message = json.loads(data)
+        if command(request_message) == FILE_REQUEST:
+            self.info_actor.tell(accept_message(connection, ip, request_message))
+
+
+class FileInfoActor(LogActor):
+    def __init__(self, local_dir, pip_size):
+        super(FileInfoActor, self).__init__()
+        self.local_dir = local_dir
+        self.pip_size = pip_size
+
+    def on_receive(self, message):
+        connection = message['connection']
+        ip = message['ip']
+        request_message = message['parsed']
+        self.logger.info("received info request from %s : %s", ip, request_message)
+
+        file_id = request_message['file_id']
+        hashes = self.hashes(file_id)
+        try:
+            info_response = file_info_message(file_id, self.pip_size, hashes)
+            connection.sendall(json.dumps(info_response))
         finally:
             connection.close()
+
+    def hashes(self, file_id):
+        hashes = []
+        with open(self.local_dir + file_id, 'r+') as fin:
+            pip = fin.read(self.pip_size)
+            while pip:
+                hashes.append(md5_hash(pip))
+                pip = fin.read(self.pip_size)
+        return hashes
