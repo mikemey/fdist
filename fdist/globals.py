@@ -1,3 +1,4 @@
+import hashlib
 import logging
 
 LOG_LEVEL = logging.INFO
@@ -12,3 +13,9 @@ SHARE_DIR = "tmp"
 TMP_DIR = "tmp/.tmp"
 RSYNC_PREFIX = "someone@somewhere:~"
 RECEIVER_ONLY = False
+
+
+def md5_hash(data):
+    m = hashlib.md5()
+    m.update(data)
+    return m.hexdigest()

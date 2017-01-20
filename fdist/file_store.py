@@ -1,15 +1,9 @@
-import hashlib
 import os
 from io import FileIO
 
+from globals import md5_hash
 from log_actor import LogActor
 from messages import command, STORE_DATA
-
-
-def md5_hash(data):
-    m = hashlib.md5()
-    m.update(data)
-    return m.hexdigest()
 
 
 class FileStore(LogActor):

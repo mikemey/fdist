@@ -7,8 +7,8 @@ from pykka.registry import ActorRegistry
 from pytest import raises
 
 from fdist.file_store import FileStore
-from fdist.file_store import md5_hash
 from fdist.messages import file_info_message, store_data_message
+from fdist.globals import md5_hash
 from helpers import LogTestCase
 
 TEST_PIP_LENGTH = 8
