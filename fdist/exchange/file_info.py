@@ -1,9 +1,8 @@
 import json
+import logging
 import socket
 from _socket import timeout, error
 from time import sleep
-
-import pykka
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
@@ -67,9 +66,9 @@ def accept_message(connection, ip, parsed_message=''): return {
 }
 
 
-class FileInfoRouter(pykka.ThreadingActor):
+class FileInfoRouter(LogActor):
     def __init__(self, local_dir, pip_size):
-        super(FileInfoRouter, self).__init__()
+        super(FileInfoRouter, self).__init__(logging.DEBUG)
         self.info_actor = FileInfoActor.start(local_dir, pip_size)
 
     def on_receive(self, connection_message):

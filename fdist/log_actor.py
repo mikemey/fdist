@@ -4,12 +4,13 @@ import pykka
 
 
 class LogActor(pykka.ThreadingActor):
-    def __init__(self):
+    def __init__(self, level=logging.INFO):
         super(LogActor, self).__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.level = level
 
     def on_start(self):
-        self.logger.info('started')
+        self.logger.log(self.level, 'started')
 
     def on_stop(self):
-        self.logger.info('stopped')
+        self.logger.log(self.level, 'stopped')
