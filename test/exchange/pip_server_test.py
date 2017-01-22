@@ -1,5 +1,4 @@
 import shutil
-import shutil
 import tempfile
 
 from pykka.registry import ActorRegistry
@@ -10,11 +9,8 @@ from test.helpers import LogTestCase, free_port, send_request_to
 
 TEST_PIP_SIZE = 3
 PIP_1 = 'A' * TEST_PIP_SIZE
-PIP_1_HASH = 'e1faffb3e614e6c2fba74296962386b7'
 PIP_2 = 'B' * TEST_PIP_SIZE
-PIP_2_HASH = '2bb225f0ba9a58930757a868ed57d9a3'
 PIP_3 = 'CC'
-PIP_3_HASH = 'aa53ca0b650dfd85c4f59fa156f7a2cc'
 
 
 class PipServerTest(LogTestCase):
