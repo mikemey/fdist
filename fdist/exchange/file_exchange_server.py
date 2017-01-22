@@ -7,7 +7,7 @@ from time import sleep
 from fdist.exchange.file_info_server import FileInfoServer
 from fdist.exchange.pip_server import PipServer
 from fdist.log_actor import LogActor
-from fdist.messages import SELF_POKE, command, FILE_REQUEST
+from fdist.messages import SELF_POKE, command, FILE_REQUEST, accept_connection_message, PIP_REQUEST
 
 
 def setup_socket(port):
@@ -46,7 +46,27 @@ class FileExchangeServer(LogActor):
 
     def server_read(self):
         connection, (ip, _) = self.socket.accept()
-        self.router.tell(accept_message(connection, ip))
+        self.router.tell(accept_connection_message(connection, ip))
+
+
+class FileExchangeRouter(LogActor):
+    def __init__(self, local_dir, pip_size):
+        super(FileExchangeRouter, self).__init__(logging.DEBUG)
+        self.info_actor = FileInfoServer.start(local_dir, pip_size)
+        self.pip_actors = [PipServer.start(local_dir, pip_size) for i in range(0, 4)]
+
+    def on_receive(self, connection_message):
+        connection = connection_message['connection']
+        ip = connection_message['ip']
+
+        data = read_data_from(connection)
+        request_message = json.loads(data)
+        accept_message = accept_connection_message(connection, ip, request_message)
+        if command(request_message) == FILE_REQUEST:
+            self.info_actor.tell(accept_message)
+        if command(request_message) == PIP_REQUEST:
+            actor_ref = min(self.pip_actors, key=lambda a: a.actor_inbox.qsize())
+            actor_ref.tell(accept_message)
 
 
 def read_data_from(connection):
@@ -58,26 +78,3 @@ def read_data_from(connection):
         except error:
             sleep(0.1)
     return None
-
-
-def accept_message(connection, ip, parsed_message=''): return {
-    'connection': connection,
-    'ip': ip,
-    'parsed': parsed_message
-}
-
-
-class FileExchangeRouter(LogActor):
-    def __init__(self, local_dir, pip_size):
-        super(FileExchangeRouter, self).__init__(logging.DEBUG)
-        self.info_actor = FileInfoServer.start(local_dir, pip_size)
-        self.pip_actors = [PipServer.start() for i in range(0, 4)]
-
-    def on_receive(self, connection_message):
-        connection = connection_message['connection']
-        ip = connection_message['ip']
-
-        data = read_data_from(connection)
-        request_message = json.loads(data)
-        if command(request_message) == FILE_REQUEST:
-            self.info_actor.tell(accept_message(connection, ip, request_message))

@@ -1,3 +1,4 @@
+import json
 import logging
 import socket
 from unittest import TestCase
@@ -42,3 +43,14 @@ def free_port():
         return sck.getsockname()[1]
     finally:
         sck.close()
+
+
+def send_request_to(address, request_message, buffer_size):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(2)
+    try:
+        sock.connect(address)
+        sock.sendall(json.dumps(request_message))
+        return json.loads(sock.recv(buffer_size))
+    finally:
+        sock.close()
