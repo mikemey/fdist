@@ -123,14 +123,14 @@ class PipLoader(LogActor):
         self.timeout_sec = timeout_sec
 
     def on_receive(self, message):
-        pip_data = self.send_pip_request(message['indices'])
+        pip_data = self.request_pip(message['indices'])
         hashes = message['hashes']
         if is_valid(pip_data, hashes):
             self.parent_actor.tell(pip_data)
         else:
             self.logger.warn('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
 
-    def send_pip_request(self, indices):
+    def request_pip(self, indices):
         self.logger.debug('requesting pip.')
 
         pip_request = pip_request_message(self.file_id, indices)
