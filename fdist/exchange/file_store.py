@@ -3,7 +3,7 @@ from io import FileIO
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
-from fdist.messages import command, STORE_DATA
+from fdist.messages import command, STORE_DATA, file_id_of
 
 
 class FileStore(LogActor):
@@ -11,7 +11,7 @@ class FileStore(LogActor):
         super(FileStore, self).__init__()
 
         self.temp_dir = temp_dir
-        self.file_cache = self.temp_dir + "/" + md5_hash(file_info_message['file_id'])
+        self.file_cache = self.temp_dir + "/" + md5_hash(file_id_of(file_info_message))
         self.file_info = file_info_message
 
     def pip_default_length(self):

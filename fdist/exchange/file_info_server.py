@@ -3,7 +3,7 @@ from io import FileIO
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
-from fdist.messages import file_info_message
+from fdist.messages import file_info_message, file_id_of
 
 
 class FileInfoServer(LogActor):
@@ -18,7 +18,7 @@ class FileInfoServer(LogActor):
         request_message = message['parsed']
         self.logger.info("received info request from %s : %s", ip, request_message)
         try:
-            file_id = request_message['file_id']
+            file_id = file_id_of(request_message)
             hashes = self.hashes(file_id)
             info_response = file_info_message(file_id, self.pip_size, hashes)
             connection.sendall(json.dumps(info_response))

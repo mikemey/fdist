@@ -5,9 +5,10 @@ import shutil
 import socket
 from _socket import error
 
+from fdist.exchange import read_data_from
 from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
 from fdist.log_actor import LogActor
-from fdist.messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE
+from fdist.messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE, file_id_of
 
 
 def create_file_loader(missing_file_message, parent_actor):
@@ -18,7 +19,7 @@ class FileLoader(LogActor):
     def __init__(self, share_dir, tmp_dir, missing_file_message, parent_actor, timeout_sec):
         super(FileLoader, self).__init__()
 
-        missing_file = missing_file_message['file']
+        missing_file = file_id_of(missing_file_message)
         self.logger = logging.getLogger(missing_file)
         self.request_message = file_request_message(missing_file)
         self.remote_address = (missing_file_message['ip'], missing_file_message['port'])
@@ -42,7 +43,8 @@ class FileLoader(LogActor):
                 self.move_to_target(file_location_message)
         except StandardError as _error:
             self.logger.error("failed: %s", _error)
-            self.parent.tell(load_failed_message(self.request_message['file_id']))
+            file_id = file_id_of(self.request_message)
+            self.parent.tell(load_failed_message(file_id))
         finally:
             self.stop()
 
@@ -53,7 +55,7 @@ class FileLoader(LogActor):
         try:
             sock.connect(self.remote_address)
             sock.sendall(json.dumps(self.request_message))
-            return json.loads(sock.recv(1024))
+            return json.loads(read_data_from(sock))
         finally:
             sock.close()
 
@@ -67,7 +69,7 @@ class FileLoader(LogActor):
         #     rsync.stop()
 
     def move_to_target(self, file_location_message):
-        file_id = file_location_message['file_id']
+        file_id = file_id_of(file_location_message)
         last_slash_ix = file_id.rfind('/')
 
         src = self.tmp_dir + file_id[last_slash_ix:]

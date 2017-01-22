@@ -11,9 +11,14 @@ STORE_DATA = 'STORE_DATA'
 SELF_POKE = {'message': 'self-poke'}
 SUCCESS_MESSAGE = {'message': 'success'}
 FAILURE_MESSAGE = {'message': 'failure'}
+_file_id_key = 'file_id'
 
 
 def command(message): return message['message']
+
+
+def file_id_of(message):
+    return message[_file_id_key]
 
 
 def broadcast_message(port, files):
@@ -40,19 +45,19 @@ def remote_files_message(ip, port, files):
     }
 
 
-def missing_file_message(ip, port, missing_file):
+def missing_file_message(ip, port, missing_file_id):
     return {
         'message': MISSING_FILE,
         'ip': ip,
         'port': port,
-        'file': missing_file
+        _file_id_key: missing_file_id
     }
 
 
-def load_failed_message(missing_file):
+def load_failed_message(missing_file_id):
     return {
         'message': LOAD_FAILED_MESSAGE,
-        'file': missing_file
+        _file_id_key: missing_file_id
     }
 
 
@@ -67,14 +72,14 @@ def accept_connection_message(connection, ip, parsed_message=''):
 def file_request_message(file_id):
     return {
         'message': FILE_REQUEST,
-        'file_id': file_id
+        _file_id_key: file_id
     }
 
 
 def file_info_message(file_id, pip_length, hashes):
     return {
         'message': FILE_LOCATION,
-        'file_id': file_id,
+        _file_id_key: file_id,
         'pip_length': pip_length,
         'hashes': hashes
     }
@@ -83,7 +88,7 @@ def file_info_message(file_id, pip_length, hashes):
 def pip_request_message(file_id, required_indices):
     return {
         'message': PIP_REQUEST,
-        'file_id': file_id,
+        _file_id_key: file_id,
         'required_indices': required_indices
     }
 
