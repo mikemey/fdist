@@ -5,15 +5,13 @@ import shutil
 import socket
 from _socket import error
 
-from globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
-from log_actor import LogActor
-from messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE
+from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
+from fdist.log_actor import LogActor
+from fdist.messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE
 
 
-class FileLoaderProvider(object):
-    @staticmethod
-    def create_file_loader(missing_file_message, parent_actor):
-        return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor, FILE_REQUEST_TIMEOUT)
+def create_file_loader(missing_file_message, parent_actor):
+    return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor, FILE_REQUEST_TIMEOUT)
 
 
 class FileLoader(LogActor):

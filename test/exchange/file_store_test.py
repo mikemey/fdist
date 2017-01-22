@@ -6,10 +6,10 @@ from time import sleep
 from pykka.registry import ActorRegistry
 from pytest import raises
 
-from fdist.file_store import FileStore
-from fdist.messages import file_info_message, pip_message
+from fdist.exchange.file_store import FileStore
 from fdist.globals import md5_hash
-from helpers import LogTestCase
+from fdist.messages import file_info_message, pip_message
+from test.helpers import LogTestCase
 
 TEST_PIP_LENGTH = 8
 FILLER_PIP = 'X' * TEST_PIP_LENGTH

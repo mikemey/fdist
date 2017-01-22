@@ -1,9 +1,9 @@
 import os
 from io import FileIO
 
-from globals import md5_hash
-from log_actor import LogActor
-from messages import command, STORE_DATA
+from fdist.globals import md5_hash
+from fdist.log_actor import LogActor
+from fdist.messages import command, STORE_DATA
 
 
 class FileStore(LogActor):
