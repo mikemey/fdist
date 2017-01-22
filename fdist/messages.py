@@ -5,6 +5,7 @@ MISSING_FILE = 'MISSING_FILE'
 LOAD_FAILED_MESSAGE = 'LOAD_FAILED_MESSAGE'
 FILE_REQUEST = 'FILE_REQUEST'
 FILE_LOCATION = 'FILE_LOCATION'
+PIP_REQUEST = 'PIP_REQUEST'
 STORE_DATA = 'STORE_DATA'
 
 SELF_POKE = {'message': 'self-poke'}
@@ -55,18 +56,18 @@ def load_failed_message(missing_file):
     }
 
 
+def accept_connection_message(connection, ip, parsed_message=''):
+    return {
+        'connection': connection,
+        'ip': ip,
+        'parsed': parsed_message
+    }
+
+
 def file_request_message(file_id):
     return {
         'message': FILE_REQUEST,
         'file_id': file_id
-    }
-
-
-def file_location_message(file_id, rsync_path):
-    return {
-        'message': FILE_LOCATION,
-        'file_id': file_id,
-        'rsync_path': rsync_path
     }
 
 
@@ -79,17 +80,17 @@ def file_info_message(file_id, pip_length, hashes):
     }
 
 
-def pip_request_message(file_id, completed_positions):
+def pip_request_message(file_id, required_indices):
     return {
-        'message': FILE_REQUEST,
+        'message': PIP_REQUEST,
         'file_id': file_id,
-        'completed_positions': completed_positions
+        'required_indices': required_indices
     }
 
 
-def store_data_message(pips_ix, data):
+def pip_message(pip_ix, data):
     return {
         'message': STORE_DATA,
-        'pips_ix': pips_ix,
+        'pip_ix': pip_ix,
         'data': data
     }

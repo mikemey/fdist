@@ -1,15 +1,12 @@
-import json
 import shutil
-import socket
+import shutil
 import tempfile
 
 from pykka.registry import ActorRegistry
 
-from fdist.exchange.file_exchange import FileExchangeServer
-from fdist.globals import md5_hash
-from fdist.messages import file_info_message, file_request_message
+from fdist.exchange.file_exchange_server import FileExchangeServer
 from fdist.messages import pip_request_message
-from test.helpers import LogTestCase, free_port
+from test.helpers import LogTestCase, free_port, send_request_to
 
 TEST_PIP_SIZE = 3
 PIP_1 = 'A' * TEST_PIP_SIZE
@@ -27,44 +24,31 @@ class PipServerTest(LogTestCase):
         self.tmpdir = tempfile.mkdtemp()
         self.fe_port = fe_port
 
-    def send_pip_request(self, request_message, buffer_size):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect(self.address)
-            sock.sendall(json.dumps(request_message))
-            return sock.recv(buffer_size)
-        finally:
-            sock.close()
-
     def tearDown(self):
         ActorRegistry.stop_all()
         shutil.rmtree(self.tmpdir)
 
-    def test_respond_with_pip(self):
+    def test_respond_with_first_pip(self):
+        completed = [0, 1]
+        self.assert_pip_response(completed, {0, 1}, {PIP_1, PIP_2})
+
+    def test_respond_with_last_pip(self):
+        completed = [2]
+        self.assert_pip_response(completed, {2}, {PIP_3})
+
+    def assert_pip_response(self, required_indices, expected_ixs, expected_datas):
         FileExchangeServer.start(self.fe_port, self.tmpdir, TEST_PIP_SIZE)
-        file_id = '/file_info.test'
+        file_id = '/pip.test'
         with open(self.tmpdir + file_id, "w") as f:
             f.write(PIP_1 + PIP_2 + PIP_3)
 
-        pip_request = pip_request_message(file_id, [False, False, False])
-        pip_response = self.send_pip_request(pip_request, TEST_PIP_SIZE)
+        pip_request = pip_request_message(file_id, required_indices)
 
-        self.quickEquals(pip_response, PIP_1)
+        actual_pip_response = send_request_to(self.address, pip_request, 1024)
+        actual_pip_ix = actual_pip_response['pip_ix']
+        actual_pip_data = actual_pip_response['data']
 
-    def test_large_file(self):
-        mega = 1024 * 1024
-        FileExchangeServer.start(self.fe_port, self.tmpdir, mega)
-
-        file_id = '/large_file.test'
-        one_meg = 'A' * mega
-        counter = 700
-        with open(self.tmpdir + file_id, "w") as f:
-            while counter > 0:
-                f.write(one_meg)
-                counter -= 1
-
-        one_meg_hash = md5_hash(one_meg)
-        expected_info = file_info_message(file_id, mega, [one_meg_hash for i in range(0, 700)])
-
-        actual_location = self.send_file_request(file_request_message(file_id))
-        self.quickEquals(actual_location, expected_info)
+        self.assertTrue(actual_pip_ix in expected_ixs,
+                        "%s not in %s" % (actual_pip_ix, expected_ixs))
+        self.assertTrue(actual_pip_data in expected_datas,
+                        "%s not in %s" % (actual_pip_data, expected_datas))
