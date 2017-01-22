@@ -1,13 +1,13 @@
 import json
 import shutil
-import socket
 import tempfile
 
 from pykka.registry import ActorRegistry
 
-from fdist.exchange.file_exchange import FileExchangeServer
+from fdist.exchange.file_exchange_server import FileExchangeServer
 from fdist.globals import md5_hash
 from fdist.messages import file_info_message, file_request_message
+from test.exchange import send_request_to
 from test.helpers import LogTestCase, free_port
 
 TEST_PIP_SIZE = 3
@@ -27,13 +27,7 @@ class FileInfoServerTest(LogTestCase):
         self.fe_port = fe_port
 
     def send_file_request(self, request_message):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect(self.address)
-            sock.sendall(json.dumps(request_message))
-            return json.loads(sock.recv(25 * 1024))
-        finally:
-            sock.close()
+        return json.loads(send_request_to(self.address, request_message, 25 * 1024))
 
     def tearDown(self):
         ActorRegistry.stop_all()

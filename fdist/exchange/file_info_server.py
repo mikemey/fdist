@@ -1,12 +1,8 @@
 import json
-import logging
-import socket
-from _socket import timeout, error
-from time import sleep
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
-from fdist.messages import SELF_POKE, command, FILE_REQUEST, file_info_message
+from fdist.messages import file_info_message
 
 
 class FileInfoServer(LogActor):
