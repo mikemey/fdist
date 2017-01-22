@@ -3,7 +3,7 @@ from io import FileIO
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
-from fdist.messages import command, STORE_DATA, file_id_of
+from fdist.messages import command, PIP_DATA, file_id_of
 
 
 class FileStore(LogActor):
@@ -15,7 +15,7 @@ class FileStore(LogActor):
         self.file_info = file_info_message
 
     def pip_default_length(self):
-        return self.file_info['pip_length']
+        return int(self.file_info['pip_length'])
 
     def pip_count(self):
         return len(self.file_info['hashes'])
@@ -33,9 +33,9 @@ class FileStore(LogActor):
             self.logger.debug('keeping cache file [%s]', self.file_cache)
 
     def on_receive(self, message):
-        if command(message) == STORE_DATA:
+        if command(message) == PIP_DATA:
             pip_data = message['data']
-            pips_ix = message['pip_ix']
+            pips_ix = int(message['pip_ix'])
             self.logger.debug('new pip, length [%s]', len(pip_data))
 
             self.check_pip(pips_ix, pip_data)
@@ -43,7 +43,7 @@ class FileStore(LogActor):
 
     def check_pip(self, ix, data):
         if ix < 0 or ix >= self.pip_count():
-            raise IOError('Pip index out of bounds [%s]' % ix)
+            raise IOError('Pip index out of bounds [%s] range: 0 and %s' % (ix, self.pip_count()))
 
         data_len = len(data)
         if data_len != self.pip_default_length():

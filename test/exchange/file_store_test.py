@@ -87,5 +87,5 @@ class FileStoreTest(LogTestCase):
         self.assert_file_cache(PIP_1 + FILLER_PIP + PIP_3)
 
     def test_pip_ix_out_of_bounds(self):
-        expected_message = 'IOError: Pip index out of bounds [3]'
+        expected_message = 'IOError: Pip index out of bounds [3] range: 0 and 3'
         self.assert_error(3, PIP_3, expected_message)
