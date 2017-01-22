@@ -25,7 +25,7 @@ class FileInfoServerTest(LogTestCase):
         self.fe_port = fe_port
 
     def send_file_request(self, request_message):
-        return send_request_to(self.address, request_message, 25 * 1024)
+        return send_request_to(self.address, request_message)
 
     def tearDown(self):
         ActorRegistry.stop_all()
@@ -48,14 +48,13 @@ class FileInfoServerTest(LogTestCase):
 
         file_id = '/large_file.test'
         one_meg = 'A' * mega
-        counter = 700
+        pip_count = 500
         with open(self.tmpdir + file_id, "w") as f:
-            while counter > 0:
+            for _ in range(0, pip_count):
                 f.write(one_meg)
-                counter -= 1
 
         one_meg_hash = md5_hash(one_meg)
-        expected_info = file_info_message(file_id, mega, [one_meg_hash for i in range(0, 700)])
+        expected_info = file_info_message(file_id, mega, [one_meg_hash] * pip_count)
 
         actual_location = self.send_file_request(file_request_message(file_id))
         self.quickEquals(actual_location, expected_info)

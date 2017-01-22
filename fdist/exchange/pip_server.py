@@ -17,10 +17,11 @@ class PipServer(LogActor):
         connection = message['connection']
         ip = message['ip']
         pip_request = message['parsed']
-        self.logger.info("received pip request from %s : %s", ip, pip_request)
+        file_id = pip_request['file_id']
+        indices = pip_request['required_indices']
+        self.logger.info("received pip request from %s : %s: %s pips missing.", ip, file_id, len(indices))
         try:
-            file_id = pip_request['file_id']
-            pip_ix = random.choice(pip_request['required_indices'])
+            pip_ix = random.choice(indices)
             response = pip_message(pip_ix, self.data(file_id, pip_ix))
             connection.sendall(json.dumps(response))
         finally:

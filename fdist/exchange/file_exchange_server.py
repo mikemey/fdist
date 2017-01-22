@@ -1,9 +1,9 @@
 import json
 import logging
 import socket
-from _socket import timeout, error
-from time import sleep
+from _socket import timeout
 
+from fdist.exchange import read_data_from
 from fdist.exchange.file_info_server import FileInfoServer
 from fdist.exchange.pip_server import PipServer
 from fdist.log_actor import LogActor
@@ -53,7 +53,7 @@ class FileExchangeRouter(LogActor):
     def __init__(self, local_dir, pip_size):
         super(FileExchangeRouter, self).__init__(logging.DEBUG)
         self.info_actor = FileInfoServer.start(local_dir, pip_size)
-        self.pip_actors = [PipServer.start(local_dir, pip_size) for i in range(0, 4)]
+        self.pip_actors = [PipServer.start(local_dir, pip_size) for _ in range(0, 4)]
 
     def on_receive(self, connection_message):
         connection = connection_message['connection']
@@ -67,14 +67,3 @@ class FileExchangeRouter(LogActor):
         if command(request_message) == PIP_REQUEST:
             actor_ref = min(self.pip_actors, key=lambda a: a.actor_inbox.qsize())
             actor_ref.tell(accept_message)
-
-
-def read_data_from(connection):
-    tries = 3
-    while tries:
-        tries -= 1
-        try:
-            return connection.recv(1024)
-        except error:
-            sleep(0.1)
-    return None

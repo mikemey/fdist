@@ -40,7 +40,7 @@ class PipServerTest(LogTestCase):
 
         pip_request = pip_request_message(file_id, required_indices)
 
-        actual_pip_response = send_request_to(self.address, pip_request, 1024)
+        actual_pip_response = send_request_to(self.address, pip_request)
         actual_pip_ix = actual_pip_response['pip_ix']
         actual_pip_data = actual_pip_response['data']
 
@@ -48,3 +48,24 @@ class PipServerTest(LogTestCase):
                         "%s not in %s" % (actual_pip_ix, expected_ixs))
         self.assertTrue(actual_pip_data in expected_datas,
                         "%s not in %s" % (actual_pip_data, expected_datas))
+
+    def test_with_large_file(self):
+        file_id = '/large_pip_file.test'
+        mega = 1024 * 1024
+        one_meg = 'A' * mega
+        pips_count = 500
+        with open(self.tmpdir + file_id, "w") as f:
+            for _ in range(0, pips_count):
+                f.write(one_meg)
+
+        FileExchangeServer.start(self.fe_port, self.tmpdir, mega)
+
+        required_indices = [i for i in range(0, pips_count)]
+        pip_request = pip_request_message(file_id, required_indices)
+
+        actual_pip_response = send_request_to(self.address, pip_request)
+        actual_pip_ix = actual_pip_response['pip_ix']
+        actual_pip_data = actual_pip_response['data']
+
+        self.assertTrue(0 <= actual_pip_ix < pips_count, "%s not in range" % actual_pip_ix)
+        self.quickEquals(actual_pip_data, one_meg)
