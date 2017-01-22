@@ -3,31 +3,47 @@ import logging
 import os
 import shutil
 import socket
-from _socket import error
 
 from fdist.exchange import read_data_from
+from fdist.exchange.file_store import FileStore
 from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
 from fdist.log_actor import LogActor
-from fdist.messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE, file_id_of
+from fdist.messages import SELF_POKE, file_request_message, load_failed_message, file_id_of, pip_request_message, \
+    command, PIP_DATA
 
 
 def create_file_loader(missing_file_message, parent_actor):
     return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor, FILE_REQUEST_TIMEOUT)
 
 
+def send_receive(request, remote_address, timeout_sec):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout_sec)
+    try:
+        sock.connect(remote_address)
+        sock.sendall(json.dumps(request))
+
+        return json.loads(read_data_from(sock))
+    finally:
+        sock.close()
+
+
 class FileLoader(LogActor):
     def __init__(self, share_dir, tmp_dir, missing_file_message, parent_actor, timeout_sec):
         super(FileLoader, self).__init__()
 
-        missing_file = file_id_of(missing_file_message)
-        self.logger = logging.getLogger(missing_file)
-        self.request_message = file_request_message(missing_file)
+        self.missing_file_id = file_id_of(missing_file_message)
+        self.logger = logging.getLogger(self.missing_file_id)
         self.remote_address = (missing_file_message['ip'], missing_file_message['port'])
 
         self.share_dir = share_dir
         self.tmp_dir = tmp_dir
         self.parent = parent_actor
         self.timeout_sec = timeout_sec
+        self.file_store = None
+        self.pip_loader = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address, self.timeout_sec)
+        self.hashes = []
+        self.indices = []
 
     def on_start(self):
         super(FileLoader, self).on_start()
@@ -36,37 +52,39 @@ class FileLoader(LogActor):
     def on_receive(self, message):
         try:
             if message is SELF_POKE:
-                file_location_message = self.send_file_request()
-                rsync_result = self.rsync_result(file_location_message)
-                if rsync_result == FAILURE_MESSAGE:
-                    raise error('rsync failed')
-                self.move_to_target(file_location_message)
+                self.setup_file_loading()
+                self.logger.debug('starting file transfer.')
+                self.ensure_work_spread()
+
+            if command(message) == PIP_DATA:
+                pip_ix = int(message['pip_ix'])
+                if pip_ix not in self.indices:
+                    self.logger.warn('duplicate pip received, index [%s]', pip_ix)
+                else:
+                    self.indices.remove(pip_ix)
+                    self.file_store.tell(message)
+                    self.ensure_work_spread()
+
         except StandardError as _error:
             self.logger.error("failed: %s", _error)
-            file_id = file_id_of(self.request_message)
-            self.parent.tell(load_failed_message(file_id))
-        finally:
-            self.stop()
+            self.parent.tell(load_failed_message(self.missing_file_id))
 
-    def send_file_request(self):
+    def distribute_work(self):
+        pass
+
+    def setup_file_loading(self):
         self.logger.debug('requesting file location.')
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(self.timeout_sec)
-        try:
-            sock.connect(self.remote_address)
-            sock.sendall(json.dumps(self.request_message))
-            return json.loads(read_data_from(sock))
-        finally:
-            sock.close()
+        file_info_request = file_request_message(self.missing_file_id)
+        file_info_message = send_receive(file_info_request, self.remote_address, self.timeout_sec)
 
-    def rsync_result(self, file_location_message):
-        self.logger.debug('starting file transfer.')
-        # rsync = RsyncWrapper.start(self.tmp_dir)
-        # try:
-        #     result = rsync.ask(file_location_message)
-        #     return result
-        # finally:
-        #     rsync.stop()
+        self.file_store = FileStore.start(self.tmp_dir, file_info_message)
+        self.hashes = file_info_message['hashes']
+        self.indices = [i for i in range(0, len(self.hashes))]
+
+    def ensure_work_spread(self):
+        if len(self.indices) <= 0:
+            return
+        self.pip_loader.tell(pip_index(self.indices))
 
     def move_to_target(self, file_location_message):
         file_id = file_id_of(file_location_message)
@@ -79,3 +97,28 @@ class FileLoader(LogActor):
         if not os.path.exists(dest_folder):
             os.makedirs(dest_folder)
         shutil.move(src, dest)
+
+
+def pip_index(indices): return {
+    'indices': indices
+}
+
+
+class PipLoader(LogActor):
+    def __init__(self, parent_actor, file_id, remote_address, timeout_sec):
+        super(PipLoader, self).__init__(logging.DEBUG)
+
+        self.parent_actor = parent_actor
+        self.file_id = file_id
+        self.remote_address = remote_address
+        self.timeout_sec = timeout_sec
+
+    def on_receive(self, message):
+        pip_data = self.send_pip_request(message['indices'])
+        self.parent_actor.tell(pip_data)
+
+    def send_pip_request(self, indices):
+        self.logger.debug('requesting pip.')
+
+        pip_request = pip_request_message(self.file_id, indices)
+        return send_receive(pip_request, self.remote_address, self.timeout_sec)
