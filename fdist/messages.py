@@ -79,6 +79,14 @@ def file_info_message(file_id, pip_length, hashes):
     }
 
 
+def pip_request_message(file_id, completed_positions):
+    return {
+        'message': FILE_REQUEST,
+        'file_id': file_id,
+        'completed_positions': completed_positions
+    }
+
+
 def store_data_message(pips_ix, data):
     return {
         'message': STORE_DATA,

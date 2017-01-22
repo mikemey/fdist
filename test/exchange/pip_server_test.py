@@ -5,9 +5,10 @@ import tempfile
 
 from pykka.registry import ActorRegistry
 
-from fdist.exchange.file_info import FileInfoServer
-from fdist.messages import file_info_message, file_request_message
+from fdist.exchange.file_exchange import FileExchangeServer
 from fdist.globals import md5_hash
+from fdist.messages import file_info_message, file_request_message
+from fdist.messages import pip_request_message
 from test.helpers import LogTestCase, free_port
 
 TEST_PIP_SIZE = 3
@@ -19,19 +20,19 @@ PIP_3 = 'CC'
 PIP_3_HASH = 'aa53ca0b650dfd85c4f59fa156f7a2cc'
 
 
-class FileInfoServerTest(LogTestCase):
+class PipServerTest(LogTestCase):
     def setUp(self):
         fe_port = free_port()
         self.address = ('localhost', fe_port)
         self.tmpdir = tempfile.mkdtemp()
         self.fe_port = fe_port
 
-    def send_file_request(self, request_message):
+    def send_pip_request(self, request_message, buffer_size):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             sock.connect(self.address)
             sock.sendall(json.dumps(request_message))
-            return json.loads(sock.recv(25 * 1024))
+            return sock.recv(buffer_size)
         finally:
             sock.close()
 
@@ -39,20 +40,20 @@ class FileInfoServerTest(LogTestCase):
         ActorRegistry.stop_all()
         shutil.rmtree(self.tmpdir)
 
-    def test_respond_with_file_info(self):
-        FileInfoServer.start(self.fe_port, self.tmpdir, TEST_PIP_SIZE)
+    def test_respond_with_pip(self):
+        FileExchangeServer.start(self.fe_port, self.tmpdir, TEST_PIP_SIZE)
         file_id = '/file_info.test'
         with open(self.tmpdir + file_id, "w") as f:
             f.write(PIP_1 + PIP_2 + PIP_3)
 
-        expected_info = file_info_message(file_id, TEST_PIP_SIZE,
-                                          [PIP_1_HASH, PIP_2_HASH, PIP_3_HASH])
-        actual_location = self.send_file_request(file_request_message(file_id))
-        self.quickEquals(actual_location, expected_info)
+        pip_request = pip_request_message(file_id, [False, False, False])
+        pip_response = self.send_pip_request(pip_request, TEST_PIP_SIZE)
+
+        self.quickEquals(pip_response, PIP_1)
 
     def test_large_file(self):
         mega = 1024 * 1024
-        FileInfoServer.start(self.fe_port, self.tmpdir, mega)
+        FileExchangeServer.start(self.fe_port, self.tmpdir, mega)
 
         file_id = '/large_file.test'
         one_meg = 'A' * mega
