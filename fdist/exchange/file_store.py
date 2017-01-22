@@ -35,7 +35,7 @@ class FileStore(LogActor):
     def on_receive(self, message):
         if command(message) == STORE_DATA:
             pip_data = message['data']
-            pips_ix = message['pips_ix']
+            pips_ix = message['pip_ix']
             self.logger.debug('new pip, length [%s]', len(pip_data))
 
             self.check_pip(pips_ix, pip_data)

@@ -7,7 +7,7 @@ from pykka.registry import ActorRegistry
 from pytest import raises
 
 from fdist.file_store import FileStore
-from fdist.messages import file_info_message, store_data_message
+from fdist.messages import file_info_message, pip_message
 from fdist.globals import md5_hash
 from helpers import LogTestCase
 
@@ -39,7 +39,7 @@ class FileStoreTest(LogTestCase):
 
     def assert_error(self, pip_ix, pip, expected_message):
         with raises(IOError) as io_error:
-            self.file_store.ask(store_data_message(pip_ix, pip))
+            self.file_store.ask(pip_message(pip_ix, pip))
         self.quickEquals(io_error.exconly(), expected_message)
 
     def test_reserve_file_when_not_exists(self):
@@ -71,9 +71,9 @@ class FileStoreTest(LogTestCase):
 
     def test_truncate_file_when_last_pip(self):
         end_pip = 'A' * (TEST_PIP_LENGTH - 1)
-        self.file_store.ask(store_data_message(0, PIP_1))
-        self.file_store.ask(store_data_message(2, end_pip))
-        self.file_store.ask(store_data_message(1, PIP_2))
+        self.file_store.ask(pip_message(0, PIP_1))
+        self.file_store.ask(pip_message(2, end_pip))
+        self.file_store.ask(pip_message(1, PIP_2))
         self.assert_file_cache(PIP_1 + PIP_2 + end_pip)
 
     def test_last_pip_too_long(self):
@@ -82,8 +82,8 @@ class FileStoreTest(LogTestCase):
         self.assert_error(2, end_pip, expected_message)
 
     def test_store_pip(self):
-        self.file_store.ask(store_data_message(0, PIP_1))
-        self.file_store.ask(store_data_message(2, PIP_3))
+        self.file_store.ask(pip_message(0, PIP_1))
+        self.file_store.ask(pip_message(2, PIP_3))
         self.assert_file_cache(PIP_1 + FILLER_PIP + PIP_3)
 
     def test_pip_ix_out_of_bounds(self):

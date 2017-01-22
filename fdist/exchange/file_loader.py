@@ -8,7 +8,6 @@ from _socket import error
 from globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
 from log_actor import LogActor
 from messages import SELF_POKE, file_request_message, load_failed_message, FAILURE_MESSAGE
-from rsync_wrapper import RsyncWrapper
 
 
 class FileLoaderProvider(object):
@@ -62,12 +61,12 @@ class FileLoader(LogActor):
 
     def rsync_result(self, file_location_message):
         self.logger.debug('starting file transfer.')
-        rsync = RsyncWrapper.start(self.tmp_dir)
-        try:
-            result = rsync.ask(file_location_message)
-            return result
-        finally:
-            rsync.stop()
+        # rsync = RsyncWrapper.start(self.tmp_dir)
+        # try:
+        #     result = rsync.ask(file_location_message)
+        #     return result
+        # finally:
+        #     rsync.stop()
 
     def move_to_target(self, file_location_message):
         file_id = file_location_message['file_id']
