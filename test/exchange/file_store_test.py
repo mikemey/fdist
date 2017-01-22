@@ -7,7 +7,6 @@ from pykka.registry import ActorRegistry
 from pytest import raises
 
 from fdist.exchange.file_store import FileStore
-from fdist.globals import md5_hash
 from fdist.messages import file_info_message, pip_message
 from test.helpers import LogTestCase
 
@@ -24,17 +23,17 @@ TEST_FILE_INFO = file_info_message(TEST_FILE_ID, TEST_PIP_LENGTH, ['hash1', 'has
 class FileStoreTest(LogTestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO)
+        self.full_file_path = self.temp_dir + "/store.test"
+
+        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO, self.full_file_path)
         sleep(0.3)
 
     def tearDown(self):
         ActorRegistry.stop_all()
         shutil.rmtree(self.temp_dir)
 
-    def full_file_path(self): return self.temp_dir + "/" + md5_hash(TEST_FILE_ID)
-
     def assert_file_cache(self, expected_data):
-        with open(self.full_file_path(), 'r') as f:
+        with open(self.full_file_path, 'r') as f:
             self.quickEquals(f.read(), expected_data)
 
     def assert_error(self, pip_ix, pip, expected_message):
@@ -45,18 +44,17 @@ class FileStoreTest(LogTestCase):
     def test_reserve_file_when_not_exists(self):
         print os.listdir(self.temp_dir)
 
-        file_name = self.full_file_path()
-        self.assertTrue(os.path.isfile(file_name))
+        self.assertTrue(os.path.isfile(self.full_file_path))
 
         self.assert_file_cache(FILLER_PIP * 3)
 
     def test_keep_file_when_already_exists(self):
         self.file_store.stop()
-        with open(self.full_file_path(), 'r+') as f:
+        with open(self.full_file_path, 'r+') as f:
             f.seek(0)
             f.write(PIP_1)
 
-        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO)
+        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO, self.full_file_path)
         self.assert_file_cache(PIP_1 + FILLER_PIP * 2)
 
     def test_pip_length_too_long(self):

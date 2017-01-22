@@ -6,7 +6,7 @@ import socket
 
 from fdist.exchange import read_data_from
 from fdist.exchange.file_store import FileStore
-from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR
+from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR, md5_hash
 from fdist.log_actor import LogActor
 from fdist.messages import SELF_POKE, file_request_message, load_failed_message, file_id_of, pip_request_message, \
     command, PIP_DATA
@@ -33,15 +33,18 @@ class FileLoader(LogActor):
         super(FileLoader, self).__init__()
 
         self.missing_file_id = file_id_of(missing_file_message)
-        self.logger = logging.getLogger(self.missing_file_id)
         self.remote_address = (missing_file_message['ip'], missing_file_message['port'])
+        self.logger = logging.getLogger(self.missing_file_id)
 
+        self.parent = parent_actor
         self.share_dir = share_dir
         self.tmp_dir = tmp_dir
-        self.parent = parent_actor
         self.timeout_sec = timeout_sec
-        self.file_store = None
-        self.pip_loader = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address, self.timeout_sec)
+
+        self.cache_file_name = self.tmp_dir + "/" + md5_hash(self.missing_file_id)
+        self.file_store_actor = None
+        self.pip_loader_actor = PipLoader.start(self.actor_ref, self.missing_file_id,
+                                                self.remote_address, self.timeout_sec)
         self.hashes = []
         self.indices = []
 
@@ -61,36 +64,41 @@ class FileLoader(LogActor):
                 if pip_ix not in self.indices:
                     self.logger.warn('duplicate pip received, index [%s]', pip_ix)
                 else:
+                    self.file_store_actor.tell(message)
                     self.indices.remove(pip_ix)
-                    self.file_store.tell(message)
-                    self.ensure_work_spread()
+                    if len(self.indices) > 0:
+                        self.ensure_work_spread()
+                    else:
+                        self.stop()
 
         except StandardError as _error:
             self.logger.error("failed: %s", _error)
             self.parent.tell(load_failed_message(self.missing_file_id))
 
-    def distribute_work(self):
-        pass
+    def on_stop(self):
+        self.pip_loader_actor.stop()
+        self.file_store_actor.stop()
+        self.move_to_target()
 
     def setup_file_loading(self):
         self.logger.debug('requesting file location.')
         file_info_request = file_request_message(self.missing_file_id)
         file_info_message = send_receive(file_info_request, self.remote_address, self.timeout_sec)
 
-        self.file_store = FileStore.start(self.tmp_dir, file_info_message)
+        self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
         self.hashes = file_info_message['hashes']
         self.indices = [i for i in range(0, len(self.hashes))]
 
     def ensure_work_spread(self):
         if len(self.indices) <= 0:
             return
-        self.pip_loader.tell(pip_index(self.indices))
+        self.pip_loader_actor.tell(pip_index(self.indices, self.hashes))
 
-    def move_to_target(self, file_location_message):
-        file_id = file_id_of(file_location_message)
+    def move_to_target(self):
+        file_id = self.missing_file_id
         last_slash_ix = file_id.rfind('/')
 
-        src = self.tmp_dir + file_id[last_slash_ix:]
+        src = self.cache_file_name
         dest_folder = self.share_dir + file_id[:last_slash_ix]
         dest = self.share_dir + file_id
 
@@ -99,8 +107,9 @@ class FileLoader(LogActor):
         shutil.move(src, dest)
 
 
-def pip_index(indices): return {
-    'indices': indices
+def pip_index(indices, hashes): return {
+    'indices': indices,
+    'hashes': hashes
 }
 
 
@@ -115,10 +124,20 @@ class PipLoader(LogActor):
 
     def on_receive(self, message):
         pip_data = self.send_pip_request(message['indices'])
-        self.parent_actor.tell(pip_data)
+        hashes = message['hashes']
+        if is_valid(pip_data, hashes):
+            self.parent_actor.tell(pip_data)
+        else:
+            self.logger.warn('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
 
     def send_pip_request(self, indices):
         self.logger.debug('requesting pip.')
 
         pip_request = pip_request_message(self.file_id, indices)
         return send_receive(pip_request, self.remote_address, self.timeout_sec)
+
+
+def is_valid(pip_data, hashes):
+    pip_ix = int(pip_data['pip_ix'])
+    pip_hash = md5_hash(pip_data['data'])
+    return hashes[pip_ix] == pip_hash

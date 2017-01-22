@@ -28,6 +28,7 @@ PIP_2 = 'B' * TEST_PIP_SIZE
 PIP_2_HASH = '2bb225f0ba9a58930757a868ed57d9a3'
 PIP_3 = 'CC'
 PIP_3_HASH = 'aa53ca0b650dfd85c4f59fa156f7a2cc'
+PIP_FILLER = 'X' * TEST_PIP_SIZE
 
 TEST_FILE_INFO_RESPONSE = file_info_message(TEST_FILE_ID, TEST_PIP_SIZE, [PIP_1_HASH, PIP_2_HASH, PIP_3_HASH])
 TEST_PIP_RESPONSE = pip_message('1', PIP_2)
@@ -96,11 +97,6 @@ class FileLoaderTest(LogTestCase):
         FileLoader.start(self.share_dir, self.tmp_dir, file_message, self.parent_actor, TEST_TIMEOUT)
         sleep(TEST_WAIT)
 
-    def assert_file_store(self, expected_data):
-        expected_store = self.tmp_dir + '/' + md5_hash(TEST_FILE_ID)
-        with open(expected_store, 'r') as f:
-            self.quickEquals(f.read(), expected_data)
-
     def test_receive_file_request(self):
         self.start_file_loader()
 
@@ -115,8 +111,8 @@ class FileLoaderTest(LogTestCase):
         self.parent_actor.tell.assert_called_once_with(load_failed_message(TEST_FILE_ID))
 
     def test_creates_file_store(self):
-        self.start_file_loader()
-        expected_store = self.tmp_dir + '/' + md5_hash(TEST_FILE_ID)
+        self.start_file_loader(TEST_INVALID_FILE_ID)
+        expected_store = self.tmp_dir + '/' + md5_hash(TEST_INVALID_FILE_ID)
         self.assertTrue(os.path.exists(expected_store))
 
     def test_store_all_pips(self):
@@ -128,7 +124,14 @@ class FileLoaderTest(LogTestCase):
         self.assertTrue(pip_request_message(TEST_FILE_ID, [0, 2]) in received)
         self.assertTrue(pip_request_message(TEST_FILE_ID, [0]) in received)
 
-        self.assert_file_store(PIP_1 + PIP_2 + PIP_3)
+        expected_file = self.share_dir + TEST_FILE_ID
+        with open(expected_file, 'r') as f:
+            self.quickEquals(f.read(), PIP_1 + PIP_2 + PIP_3)
 
-    def test_move_completed_file_to_destination(self):
-        pass
+    def test_reject_pip_with_wrong_hash(self):
+        self.start_file_loader(TEST_INVALID_FILE_ID)
+        sleep(TEST_WAIT)
+
+        expected_store = self.tmp_dir + '/' + md5_hash(TEST_INVALID_FILE_ID)
+        with open(expected_store, 'r') as f:
+            self.quickEquals(f.read(), PIP_FILLER + PIP_FILLER + PIP_FILLER)

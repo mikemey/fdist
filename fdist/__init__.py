@@ -31,7 +31,7 @@ def main():
 
     local_file_receiver = [file_diff]
     if not RECEIVER_ONLY:
-        FileInfoServer.start(FILE_EXCHANGE_PORT, RSYNC_PREFIX)
+        FileInfoServer.start(FILE_EXCHANGE_PORT, PIP_SIZE)
         file_announcer = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
         local_file_receiver.append(file_announcer)
 
