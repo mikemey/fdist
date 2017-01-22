@@ -5,7 +5,7 @@ from pykka.registry import ActorRegistry
 
 from announcer import Announcer
 from exchange.file_info_server import FileInfoServer
-from file_loader import FileLoaderProvider
+from exchange.file_loader import create_file_loader
 from file_master import FileMaster
 from files_diff import FilesDiff
 from globals import *
@@ -26,7 +26,7 @@ def main():
     logger = init_logging()
     logger.info("receive only: %s", RECEIVER_ONLY)
 
-    master = FileMaster.start(FileLoaderProvider())
+    master = FileMaster.start(create_file_loader)
     file_diff = FilesDiff.start(master)
 
     local_file_receiver = [file_diff]
