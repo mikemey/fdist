@@ -69,16 +69,12 @@ class FileLoader(LogActor):
                     if len(self.indices) > 0:
                         self.ensure_work_spread()
                     else:
+                        self.move_to_target()
                         self.stop()
 
         except StandardError as _error:
             self.logger.error("failed: %s", _error)
             self.parent.tell(load_failed_message(self.missing_file_id))
-
-    def on_stop(self):
-        self.pip_loader_actor.stop()
-        self.file_store_actor.stop()
-        self.move_to_target()
 
     def setup_file_loading(self):
         self.logger.debug('requesting file location.')
