@@ -29,20 +29,20 @@ class RemoteFilesTest(LogTestCase):
     def tearDown(self):
         self.remote_files.stop()
 
-    def send_broadcast_from(self, message, src_ip=TEST_IP):
+    def send_broadcast_message(self, message, src_ip=TEST_IP):
         payload = json.dumps(message)
         udp_packet = IP(src=src_ip) / UDP(dport=self.broadcast_port) / payload
         sendrecv.send(udp_packet)
 
     def test_forwards_new_node(self):
-        self.send_broadcast_from(broadcast_message(TEST_PORT, TEST_FILES))
+        self.send_broadcast_message(broadcast_message(TEST_PORT, TEST_FILES))
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_called_with(remote_files_message(TEST_IP, TEST_PORT, TEST_FILES))
 
     def test_doesnt_report_own_node(self):
         own_ip = socket.gethostbyname(socket.gethostname())
-        self.send_broadcast_from(broadcast_message(TEST_PORT, TEST_FILES), own_ip)
+        self.send_broadcast_message(broadcast_message(TEST_PORT, TEST_FILES), own_ip)
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_not_called()
@@ -51,8 +51,8 @@ class RemoteFilesTest(LogTestCase):
         test_port_2 = 32323
         test_files_2 = ["/2_file_a.txt", "/2_file_b.txt"]
 
-        self.send_broadcast_from(broadcast_message(TEST_PORT, TEST_FILES))
-        self.send_broadcast_from(broadcast_message(test_port_2, test_files_2))
+        self.send_broadcast_message(broadcast_message(TEST_PORT, TEST_FILES))
+        self.send_broadcast_message(broadcast_message(test_port_2, test_files_2))
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_any_call(remote_files_message(TEST_IP, TEST_PORT, TEST_FILES))
@@ -66,7 +66,7 @@ class RemoteFilesTest(LogTestCase):
         sleep(TEST_WAIT)
         self.receiver.tell.assert_not_called()
 
-        self.send_broadcast_from(broadcast_message(TEST_PORT, TEST_FILES))
+        self.send_broadcast_message(broadcast_message(TEST_PORT, TEST_FILES))
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_called_with(remote_files_message(TEST_IP, TEST_PORT, TEST_FILES))
