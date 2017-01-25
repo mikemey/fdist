@@ -76,6 +76,10 @@ class FileLoader(LogActor):
             self.logger.error("failed: %s", _error)
             self.parent.tell(load_failed_message(self.missing_file_id))
 
+    def on_stop(self):
+        self.pip_loader_actor.stop()
+        self.file_store_actor.stop()
+
     def setup_file_loading(self):
         self.logger.debug('requesting file location.')
         file_info_request = file_request_message(self.missing_file_id)
