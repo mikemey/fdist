@@ -26,6 +26,7 @@ def main():
     logger = init_logging()
     logger.info("receive only: %s", RECEIVER_ONLY)
 
+    remote = None
     try:
         master = FileMaster.start(create_file_loader)
         file_diff = FilesDiff.start(master)

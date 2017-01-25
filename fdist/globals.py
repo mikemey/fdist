@@ -1,7 +1,7 @@
 import hashlib
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 BROADCAST_PORT = 18010
 BROADCAST_INTERVAL_SEC = 5
 
@@ -11,9 +11,9 @@ LOCAL_FILES_INTERVAL_SEC = 5
 FILE_REQUEST_TIMEOUT = 2.0
 SHARE_DIR = "tmp"
 TMP_DIR = "tmp/.tmp"
-RECEIVER_ONLY = True
+RECEIVER_ONLY = False
 
-PIP_SIZE = 3
+PIP_SIZE = 1024 * 1024
 
 
 def md5_hash(data):
