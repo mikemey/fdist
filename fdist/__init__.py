@@ -43,6 +43,8 @@ def main():
         logger.info('FDIST started')
         while True:
             time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info('received keyboard interrupt.')
     finally:
         logger.info('FDIST stopping...')
         remote.stop()
