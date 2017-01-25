@@ -26,23 +26,23 @@ def main():
     logger = init_logging()
     logger.info("receive only: %s", RECEIVER_ONLY)
 
-    master = FileMaster.start(create_file_loader)
-    file_diff = FilesDiff.start(master)
-
-    local_file_receiver = [file_diff]
-    if not RECEIVER_ONLY:
-        FileExchangeServer.start(FILE_EXCHANGE_PORT, SHARE_DIR, PIP_SIZE)
-        file_announcer = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
-        local_file_receiver.append(file_announcer)
-
-    LocalFiles.start(local_file_receiver, SHARE_DIR, LOCAL_FILES_INTERVAL_SEC)
-    remote = RemoteFiles(file_diff, BROADCAST_PORT).start()
-
-    logger.info('FDIST started')
     try:
+        master = FileMaster.start(create_file_loader)
+        file_diff = FilesDiff.start(master)
+
+        local_file_receiver = [file_diff]
+        if not RECEIVER_ONLY:
+            FileExchangeServer.start(FILE_EXCHANGE_PORT, SHARE_DIR, PIP_SIZE)
+            file_announcer = Announcer.start(FILE_EXCHANGE_PORT, BROADCAST_PORT, BROADCAST_INTERVAL_SEC)
+            local_file_receiver.append(file_announcer)
+
+        LocalFiles.start(local_file_receiver, SHARE_DIR, LOCAL_FILES_INTERVAL_SEC)
+        remote = RemoteFiles(file_diff, BROADCAST_PORT).start()
+
+        logger.info('FDIST started')
         while True:
             time.sleep(1)
-    except KeyboardInterrupt:
+    finally:
         logger.info('FDIST stopping...')
         remote.stop()
         ActorRegistry.stop_all()
