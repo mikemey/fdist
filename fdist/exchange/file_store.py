@@ -1,3 +1,4 @@
+import logging
 import os
 from io import FileIO
 
@@ -7,7 +8,7 @@ from fdist.messages import command, PIP_DATA
 
 class FileStore(LogActor):
     def __init__(self, temp_dir, file_info_message, file_name):
-        super(FileStore, self).__init__()
+        super(FileStore, self).__init__(logging.DEBUG)
 
         self.temp_dir = temp_dir
         self.file_name = file_name
