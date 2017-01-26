@@ -52,6 +52,10 @@ def next_message():
     return msg
 
 
+def reset_messages():
+    switcher['curr'] = 0
+
+
 def decide_response(request):
     if command(request) == FILE_REQUEST:
         return TEST_FILE_INFO_RESPONSE
@@ -85,6 +89,7 @@ class FileLoaderTest(LogTestCase):
         self.mocked_server = FileRequestServer(self.remote_fe_port)
 
         self.parent_actor = MagicMock(spec=ActorRef)
+        reset_messages()
 
     def tearDown(self):
         self.mocked_server.stop()
@@ -119,7 +124,8 @@ class FileLoaderTest(LogTestCase):
         self.start_file_loader()
         sleep(TEST_WAIT)
 
-        received = self.mocked_server.received_data()[1:]
+        received = self.mocked_server.received_data()
+        sleep(TEST_WAIT * 2)
         self.assertTrue(pip_request_message(TEST_FILE_ID, [0, 1, 2]) in received)
         self.assertTrue(pip_request_message(TEST_FILE_ID, [0, 2]) in received)
         self.assertTrue(pip_request_message(TEST_FILE_ID, [0]) in received)

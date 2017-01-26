@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import socket
+from time import sleep
 
 from fdist.exchange import read_data_from
 from fdist.exchange.file_store import FileStore
@@ -50,14 +51,29 @@ class FileLoader(LogActor):
 
     def on_start(self):
         super(FileLoader, self).on_start()
+
+        file_info_message = self.request_file_info()
+        self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
+        self.hashes = file_info_message['hashes']
+        self.indices = [i for i in range(0, len(self.hashes))]
+
+        self.request_pip()
         self.actor_ref.tell(SELF_POKE)
+
+    def request_file_info(self):
+        self.logger.debug('requesting file info.')
+        file_info_request = file_request_message(self.missing_file_id)
+        try:
+            return send_receive(file_info_request, self.remote_address, self.timeout_sec)
+        except StandardError as _error:
+            self.handle_error(_error)
 
     def on_receive(self, message):
         try:
+            self.ensure_work_alive()
             if message is SELF_POKE:
-                self.setup_file_loading()
-                self.logger.debug('starting file transfer.')
-                self.ensure_work_spread()
+                sleep(1)
+                self.actor_ref.tell(SELF_POKE)
 
             if command(message) == PIP_DATA:
                 pip_ix = int(message['pip_ix'])
@@ -67,34 +83,28 @@ class FileLoader(LogActor):
                     self.file_store_actor.tell(message)
                     self.indices.remove(pip_ix)
                     if len(self.indices) > 0:
-                        self.ensure_work_spread()
+                        self.request_pip()
                     else:
-                        self.move_to_target()
-                        self.stop()
+                        self.handle_success()
 
         except StandardError as _error:
-            self.logger.error("failed: %s", _error)
-            self.parent.tell(load_failed_message(self.missing_file_id))
+            self.handle_error(_error)
 
     def on_stop(self):
-        self.pip_loader_actor.stop()
-        self.file_store_actor.stop()
+        if self.pip_loader_actor.is_alive():
+            self.pip_loader_actor.stop()
+        if self.file_store_actor and self.file_store_actor.is_alive():
+            self.file_store_actor.stop()
 
-    def setup_file_loading(self):
-        self.logger.debug('requesting file location.')
-        file_info_request = file_request_message(self.missing_file_id)
-        file_info_message = send_receive(file_info_request, self.remote_address, self.timeout_sec)
-
-        self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
-        self.hashes = file_info_message['hashes']
-        self.indices = [i for i in range(0, len(self.hashes))]
-
-    def ensure_work_spread(self):
-        if len(self.indices) <= 0:
-            return
+    def request_pip(self):
         self.pip_loader_actor.tell(pip_index(self.indices, self.hashes))
 
-    def move_to_target(self):
+    def handle_success(self):
+        self.file_store_actor.stop()
+        while self.file_store_actor.is_alive():
+            self.logger.debug('waiting for file store to finish...')
+            sleep(1)
+
         file_id = self.missing_file_id
         last_slash_ix = file_id.rfind('/')
 
@@ -102,9 +112,20 @@ class FileLoader(LogActor):
         dest_folder = self.share_dir + file_id[:last_slash_ix]
         dest = self.share_dir + file_id
 
+        self.logger.debug('moving file to [%s]', dest)
         if not os.path.exists(dest_folder):
             os.makedirs(dest_folder)
         shutil.move(src, dest)
+        self.stop()
+
+    def ensure_work_alive(self):
+        if not self.pip_loader_actor.is_alive():
+            self.handle_error('pip loader error.')
+
+    def handle_error(self, description):
+        self.logger.error("failed: %s", description)
+        self.parent.tell(load_failed_message(self.missing_file_id))
+        self.stop()
 
 
 def pip_index(indices, hashes): return {
@@ -131,9 +152,8 @@ class PipLoader(LogActor):
             self.logger.warn('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
 
     def request_pip(self, indices):
-        self.logger.debug('requesting pip.')
-
         pip_request = pip_request_message(self.file_id, indices)
+        self.logger.debug('requesting pip [%s]', pip_request)
         return send_receive(pip_request, self.remote_address, self.timeout_sec)
 
 
