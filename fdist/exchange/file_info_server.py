@@ -1,5 +1,7 @@
 import json
+import os
 from io import FileIO
+from math import ceil
 
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
@@ -26,10 +28,17 @@ class FileInfoServer(LogActor):
             connection.close()
 
     def hashes(self, file_id):
+        self.logger.debug("calculating hashes")
+        full_path = self.local_dir + file_id
+        pieces = int(ceil(os.path.getsize(full_path)) / float(self.pip_size))
+
         hashes = []
         with FileIO(self.local_dir + file_id, 'r+') as fin:
             pip = fin.read(self.pip_size)
+            curr = 0
             while pip:
+                curr += 1
+                self.logger.debug("calculating %2s of %s", curr, pieces)
                 hashes.append(md5_hash(pip))
                 pip = fin.read(self.pip_size)
         return hashes
