@@ -67,5 +67,8 @@ class FileExchangeRouter(LogActor):
             self.info_actor.tell(accept_message)
         if command(request_message) == PIP_REQUEST:
             actor_ref = self.pip_actors[self.current_actor_ix]
-            self.current_actor_ix += 1
+            self.update_actor_index()
             actor_ref.tell(accept_message)
+
+    def update_actor_index(self):
+        self.current_actor_ix = (self.current_actor_ix + 1) % len(self.pip_actors)
