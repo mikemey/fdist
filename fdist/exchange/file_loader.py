@@ -53,24 +53,25 @@ class FileLoader(LogActor):
         super(FileLoader, self).on_start()
 
         file_info_message = self.request_file_info()
-        self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
-        self.hashes = file_info_message['hashes']
-        self.indices = [i for i in range(0, len(self.hashes))]
+        if file_info_message:
+            self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
+            self.hashes = file_info_message['hashes']
+            self.indices = [i for i in range(0, len(self.hashes))]
 
-        self.request_pip()
-        self.actor_ref.tell(SELF_POKE)
+            self.request_pip()
+            self.actor_ref.tell(SELF_POKE)
 
     def request_file_info(self):
         self.logger.debug('requesting file info.')
         file_info_request = file_request_message(self.missing_file_id)
         try:
-            return send_receive(file_info_request, self.remote_address, self.timeout_sec)
+            return send_receive(file_info_request, self.remote_address, 20)
         except StandardError as _error:
             self.handle_error(_error)
 
     def on_receive(self, message):
         try:
-            self.ensure_work_alive()
+            self.ensure_pip_loader_alive()
             if message is SELF_POKE:
                 sleep(1)
                 self.actor_ref.tell(SELF_POKE)
@@ -91,6 +92,7 @@ class FileLoader(LogActor):
             self.handle_error(_error)
 
     def on_stop(self):
+        super(FileLoader, self).on_stop()
         if self.pip_loader_actor.is_alive():
             self.pip_loader_actor.stop()
         if self.file_store_actor and self.file_store_actor.is_alive():
@@ -118,7 +120,7 @@ class FileLoader(LogActor):
         shutil.move(src, dest)
         self.stop()
 
-    def ensure_work_alive(self):
+    def ensure_pip_loader_alive(self):
         if not self.pip_loader_actor.is_alive():
             self.handle_error('pip loader error.')
 
