@@ -23,7 +23,7 @@ class PipServer(LogActor):
         try:
             pip_ix = random.choice(indices)
             response = pip_message(pip_ix, self.data(file_id, pip_ix))
-            connection.sendall(json.dumps(response))
+            connection.sendall(json.dumps(response, ensure_ascii=False))
         finally:
             connection.close()
 
