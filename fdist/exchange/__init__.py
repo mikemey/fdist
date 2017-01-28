@@ -30,9 +30,9 @@ def read_data_from(connection):
     while True:
         try:
             chunk = connection.recv(CHUNK_SIZE)
-            bytes_read = len(chunk)
             buf += chunk
-            if bytes_read < CHUNK_SIZE:
+            bytes_read = len(chunk)
+            if bytes_read == 0:
                 return buf
         except socket.error as e:
             err = e.args[0]
