@@ -46,6 +46,7 @@ class FileExchangeServer(LogActor):
 
     def server_read(self):
         connection, (ip, _) = self.socket.accept()
+        self.logger.debug('incoming connection from [%s]', ip)
         self.router.tell(accept_connection_message(connection, ip))
 
 

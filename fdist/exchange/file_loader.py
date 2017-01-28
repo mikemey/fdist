@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import socket
+import traceback
 from time import sleep
 
 from fdist.exchange import read_data_from
@@ -126,6 +127,7 @@ class FileLoader(LogActor):
 
     def handle_error(self, description):
         self.logger.error("failed: %s", description)
+        traceback.print_exc()
         self.parent.tell(load_failed_message(self.missing_file_id))
         self.stop()
 
