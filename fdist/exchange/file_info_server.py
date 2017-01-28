@@ -32,20 +32,20 @@ class FileInfoServer(LogActor):
         if file_id in self.hash_cache:
             self.logger.debug('cache hit [%s]', file_id)
         else:
-            self.hash_cache[file_id] = self.calculate_hash(file_id)
+            full_path = self.local_dir + file_id
+            pieces = int(ceil(os.path.getsize(full_path)) / float(self.pip_size))
+            self.logger.debug("%4s pieces, calculating hashes...", pieces)
+            self.hash_cache[file_id] = self.calculate_hash(full_path)
+            self.logger.debug("done")
+
         return self.hash_cache[file_id]
 
-    def calculate_hash(self, file_id):
-        self.logger.debug("calculating hashes")
-        full_path = self.local_dir + file_id
-        pieces = int(ceil(os.path.getsize(full_path)) / float(self.pip_size))
-
+    def calculate_hash(self, full_path):
         hashes = []
-        with FileIO(self.local_dir + file_id, 'r+') as fin:
+        with FileIO(full_path, 'r+') as fin:
             pip = fin.read(self.pip_size)
             curr = 0
             while pip:
-                self.logger.debug("calculating %2s of %s", curr, pieces)
                 curr += 1
                 hashes.append(md5_hash(pip))
                 pip = fin.read(self.pip_size)
