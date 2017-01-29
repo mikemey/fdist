@@ -5,6 +5,8 @@ import traceback
 from logging import DEBUG
 from time import sleep
 
+from fdist.globals import md5_hash
+
 CHUNK_SIZE = 8192
 FRAME_SEPARATOR = ":"
 
@@ -33,6 +35,7 @@ def recv_log(src, msg, *args, **kwargs):
 def send_data_to(sck, data, src=''):
     send_log(src, 'start')
 
+    recv_log(src, 'payload hash [%s]', md5_hash(data))
     data = frame_data(src, data)
     total_sent = 0
     while len(data) > 0:
@@ -74,6 +77,7 @@ def read_data_from(connection, src=''):
         buf += chunk
         if len(buf) >= frame_len:
             recv_log(src, 'payload read [%s] bytes', len(buf))
+            recv_log(src, 'payload hash [%s]', md5_hash(buf))
             return buf, True
         return buf, None
 
