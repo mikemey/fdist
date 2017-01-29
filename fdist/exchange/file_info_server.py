@@ -3,6 +3,7 @@ import os
 from io import FileIO
 from math import ceil
 
+from fdist.exchange import send_data_to
 from fdist.globals import md5_hash
 from fdist.log_actor import LogActor
 from fdist.messages import file_info_message, file_id_of
@@ -24,7 +25,7 @@ class FileInfoServer(LogActor):
             file_id = file_id_of(request_message)
             hashes = self.hashes(file_id)
             info_response = file_info_message(file_id, self.pip_size, hashes)
-            connection.sendall(json.dumps(info_response))
+            send_data_to(connection, json.dumps(info_response), 'file-info-server')
         finally:
             connection.close()
 

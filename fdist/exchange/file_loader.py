@@ -6,7 +6,7 @@ import socket
 import traceback
 from time import sleep
 
-from fdist.exchange import read_data_from
+from fdist.exchange import read_data_from, send_data_to
 from fdist.exchange.file_store import FileStore
 from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR, md5_hash
 from fdist.log_actor import LogActor
@@ -20,12 +20,10 @@ def create_file_loader(missing_file_message, parent_actor):
 
 def send_receive(request, remote_address, timeout_sec):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(timeout_sec)
     try:
         sock.connect(remote_address)
-        sock.sendall(json.dumps(request))
-
-        return json.loads(read_data_from(sock))
+        send_data_to(sock, json.dumps(request), 'file-loader')
+        return json.loads(read_data_from(sock, 'file-loader'))
     finally:
         sock.close()
 

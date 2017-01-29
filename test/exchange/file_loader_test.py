@@ -9,6 +9,7 @@ from mock.mock import MagicMock
 from pykka.actor import ActorRef
 from pykka.registry import ActorRegistry
 
+from fdist.exchange import send_data_to, read_data_from
 from fdist.exchange.file_loader import FileLoader
 from fdist.globals import md5_hash
 from fdist.messages import *
@@ -68,12 +69,12 @@ def decide_response(request):
 
 class FileRequestHandler(BaseRequestHandler):
     def handle(self):
-        data = self.request.recv(1024).strip()
+        data = read_data_from(self.request, 'test-file-loader')
         request = json.loads(data)
         self.server.data_records.append(request)
 
         response_message = decide_response(request)
-        self.request.sendall(json.dumps(response_message))
+        send_data_to(self.request, json.dumps(response_message), 'test-file-loader')
 
 
 class FileRequestServer(MockServer):
@@ -116,8 +117,8 @@ class FileLoaderTest(LogTestCase):
         self.parent_actor.tell.assert_called_once_with(load_failed_message(TEST_FILE_ID))
 
     def test_creates_file_store(self):
-        self.start_file_loader(TEST_INVALID_FILE_ID)
-        expected_store = self.tmp_dir + '/' + md5_hash(TEST_INVALID_FILE_ID)
+        self.start_file_loader(TEST_FILE_ID)
+        expected_store = self.tmp_dir + '/' + md5_hash(TEST_FILE_ID)
         self.assertTrue(os.path.exists(expected_store))
 
     def test_store_all_pips(self):

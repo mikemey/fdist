@@ -1,5 +1,6 @@
 import sys
 import time
+from logging import INFO, WARN
 
 import pykka
 from pykka.registry import ActorRegistry
@@ -20,9 +21,10 @@ def init_logging(level=LOG_LEVEL):
                         datefmt='%Y-%m-%d %H:%M:%S',
                         stream=sys.stdout
                         )
-    logging.getLogger(pykka.__name__).setLevel(logging.WARN)
-    logging.getLogger(Announcer.__name__).setLevel(logging.INFO)
-    logging.getLogger(RemoteFiles.__name__).setLevel(logging.INFO)
+    logging.getLogger(pykka.__name__).setLevel(WARN)
+    logging.getLogger(Announcer.__name__).setLevel(INFO)
+    logging.getLogger(RemoteFiles.__name__).setLevel(INFO)
+    logging.getLogger('network').setLevel(INFO)
     return logging.getLogger('main')
 
 

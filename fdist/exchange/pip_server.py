@@ -3,6 +3,7 @@ import logging
 import random
 from io import FileIO
 
+from fdist.exchange import send_data_to
 from fdist.log_actor import LogActor
 from fdist.messages import pip_message, file_id_of
 
@@ -23,7 +24,7 @@ class PipServer(LogActor):
         try:
             pip_ix = random.choice(indices)
             response = pip_message(pip_ix, self.data(file_id, pip_ix))
-            connection.sendall(json.dumps(response, ensure_ascii=False))
+            send_data_to(connection, json.dumps(response, ensure_ascii=False), 'pip-server')
         finally:
             connection.close()
 

@@ -7,7 +7,7 @@ from fdist.exchange import read_data_from
 from fdist.exchange.file_info_server import FileInfoServer
 from fdist.exchange.pip_server import PipServer
 from fdist.log_actor import LogActor
-from fdist.messages import SELF_POKE, command, FILE_REQUEST, accept_connection_message, PIP_REQUEST
+from fdist.messages import SELF_POKE, FILE_REQUEST, accept_connection_message, PIP_REQUEST, command
 
 
 def setup_socket(port):
@@ -61,12 +61,16 @@ class FileExchangeRouter(LogActor):
         connection = connection_message['connection']
         ip = connection_message['ip']
 
-        data = read_data_from(connection)
+        self.logger.debug('reading request...')
+        data = read_data_from(connection, 'file-exchange-server')
         request_message = json.loads(data)
         accept_message = accept_connection_message(connection, ip, request_message)
-        if command(request_message) == FILE_REQUEST:
+
+        cmd = command(request_message)
+        self.logger.debug('received request [%s]', cmd)
+        if cmd == FILE_REQUEST:
             self.info_actor.tell(accept_message)
-        if command(request_message) == PIP_REQUEST:
+        elif cmd == PIP_REQUEST:
             actor_ref = self.pip_actors[self.current_actor_ix]
             self.update_actor_index()
             actor_ref.tell(accept_message)

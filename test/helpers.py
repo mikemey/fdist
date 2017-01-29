@@ -4,7 +4,7 @@ import socket
 from unittest import TestCase
 
 from fdist import init_logging
-from fdist.exchange import read_data_from
+from fdist.exchange import read_data_from, send_data_to
 
 init_logging(logging.DEBUG)
 logging.getLogger("pykka").setLevel(logging.INFO)
@@ -48,15 +48,11 @@ def free_port():
 
 def send_request_to(address, request_message):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    raw = ''
     try:
         sock.connect(address)
-        sock.sendall(json.dumps(request_message))
-        raw = read_data_from(sock)
-        return json.loads(raw)
+        send_data_to(sock, json.dumps(request_message), 'test-helper')
+        return json.loads(read_data_from(sock, 'test-helper'))
     except StandardError as e:
-        print 'TEST received:', raw
-        print 'TEST error:', e.message
         raise e
     finally:
         sock.close()
