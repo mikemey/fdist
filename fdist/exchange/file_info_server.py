@@ -45,13 +45,8 @@ class FileInfoServer(LogActor):
         hashes = []
         with FileIO(full_path, 'r+') as fin:
             pip = fin.read(self.pip_size)
-            curr = 0
             while pip:
-                curr += 1
                 pip_hash = md5_hash(pip)
                 hashes.append(pip_hash)
                 pip = fin.read(self.pip_size)
-                if curr == 240:
-                    self.logger.info('hash [%s]', pip_hash)
-        print hashes
         return hashes
