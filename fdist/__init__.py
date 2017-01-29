@@ -23,6 +23,7 @@ def init_logging(level=LOG_LEVEL):
                         )
     logging.getLogger(pykka.__name__).setLevel(WARN)
     logging.getLogger(Announcer.__name__).setLevel(INFO)
+    logging.getLogger(FilesDiff.__name__).setLevel(INFO)
     logging.getLogger(RemoteFiles.__name__).setLevel(INFO)
     logging.getLogger('network').setLevel(INFO)
     return logging.getLogger('main')
