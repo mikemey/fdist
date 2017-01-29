@@ -163,6 +163,6 @@ class PipLoader(LogActor):
         pip_ix = int(pip_data['pip_ix'])
         data_ = pip_data['data']
         pip_hash = md5_hash(data_)
-        self.logger.debug('  expected hash [%s]-[%s]-[%s]', hashes[pip_ix])
+        self.logger.debug('  expected hash [%s]', hashes[pip_ix])
         self.logger.debug('calculated hash [%s]', pip_hash)
         return hashes[pip_ix] == pip_hash
