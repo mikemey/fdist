@@ -1,7 +1,7 @@
 import hashlib
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 BROADCAST_PORT = 18010
 BROADCAST_INTERVAL_SEC = 5
 
@@ -20,6 +20,3 @@ def md5_hash(data):
     m = hashlib.md5()
     m.update(data)
     return m.hexdigest()
-
-    # expected 01a2e03126f4d04129bbdb5f61f418b2
-    # 76939faef536d2313a0c831663a47cf1
