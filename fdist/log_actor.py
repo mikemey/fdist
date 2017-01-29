@@ -6,14 +6,15 @@ import pykka
 all_rand = []
 
 
+def rand(): return random.randint(0, 100)
+
+
 def unique_id():
-    def rand(): return random.randint(0, 100)
-
     r = rand()
-
     while r in all_rand:
         r = rand()
     all_rand.append(r)
+    return r
 
 
 class LogActor(pykka.ThreadingActor):

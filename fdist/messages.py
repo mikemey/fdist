@@ -7,6 +7,7 @@ FILE_REQUEST = 'FILE_REQUEST'
 FILE_INFO = 'FILE_INFO'
 PIP_REQUEST = 'PIP_REQUEST'
 PIP_DATA = 'PIP_DATA'
+EMPTY_PIP_DATA = 'EMPTY_PIP_DATA'
 
 SELF_POKE = {'message': 'self-poke'}
 SUCCESS_MESSAGE = {'message': 'success'}
@@ -87,4 +88,9 @@ def pip_message(pip_ix, data): return {
     'message': PIP_DATA,
     'pip_ix': pip_ix,
     'data': data
+}
+
+
+def empty_pip_message(): return {
+    'message': EMPTY_PIP_DATA
 }

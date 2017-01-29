@@ -8,28 +8,28 @@ from time import sleep
 
 from fdist.exchange import read_data_from, send_data_to
 from fdist.exchange.file_store import FileStore
-from fdist.globals import FILE_REQUEST_TIMEOUT, TMP_DIR, SHARE_DIR, md5_hash
+from fdist.globals import TMP_DIR, SHARE_DIR, md5_hash
 from fdist.log_actor import LogActor
 from fdist.messages import SELF_POKE, file_request_message, load_failed_message, file_id_of, pip_request_message, \
-    command, PIP_DATA
+    command, PIP_DATA, empty_pip_message, EMPTY_PIP_DATA
 
 
 def create_file_loader(missing_file_message, parent_actor):
-    return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor, FILE_REQUEST_TIMEOUT)
+    return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor)
 
 
-def send_receive(request, remote_address, timeout_sec):
+def send_receive(request, remote_address, src):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect(remote_address)
-        send_data_to(sock, json.dumps(request), 'file-loader')
-        return json.loads(read_data_from(sock, 'file-loader'))
+        send_data_to(sock, json.dumps(request), src)
+        return json.loads(read_data_from(sock, src).decode(errors="ignore"))
     finally:
         sock.close()
 
 
 class FileLoader(LogActor):
-    def __init__(self, share_dir, tmp_dir, missing_file_message, parent_actor, timeout_sec):
+    def __init__(self, share_dir, tmp_dir, missing_file_message, parent_actor):
         super(FileLoader, self).__init__()
 
         self.missing_file_id = file_id_of(missing_file_message)
@@ -39,12 +39,10 @@ class FileLoader(LogActor):
         self.parent = parent_actor
         self.share_dir = share_dir
         self.tmp_dir = tmp_dir
-        self.timeout_sec = timeout_sec
 
         self.cache_file_name = self.tmp_dir + "/" + md5_hash(self.missing_file_id)
         self.file_store_actor = None
-        self.pip_loader_actor = PipLoader.start(self.actor_ref, self.missing_file_id,
-                                                self.remote_address, self.timeout_sec)
+        self.pip_loader_actor = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address)
         self.hashes = []
         self.indices = []
 
@@ -64,7 +62,7 @@ class FileLoader(LogActor):
         self.logger.debug('requesting file info.')
         file_info_request = file_request_message(self.missing_file_id)
         try:
-            return send_receive(file_info_request, self.remote_address, 20)
+            return send_receive(file_info_request, self.remote_address, 'file-loader')
         except StandardError as _error:
             self.handle_error(_error)
 
@@ -74,6 +72,9 @@ class FileLoader(LogActor):
             if message is SELF_POKE:
                 sleep(1)
                 self.actor_ref.tell(SELF_POKE)
+
+            if command(message) == EMPTY_PIP_DATA:
+                self.request_pip()
 
             if command(message) == PIP_DATA:
                 pip_ix = int(message['pip_ix'])
@@ -137,29 +138,31 @@ def pip_index(indices, hashes): return {
 
 
 class PipLoader(LogActor):
-    def __init__(self, parent_actor, file_id, remote_address, timeout_sec):
-        super(PipLoader, self).__init__(level=logging.DEBUG)
+    def __init__(self, parent_actor, file_id, remote_address):
+        super(PipLoader, self).__init__(unique_name=True, level=logging.DEBUG)
 
         self.parent_actor = parent_actor
         self.file_id = file_id
         self.remote_address = remote_address
-        self.timeout_sec = timeout_sec
 
     def on_receive(self, message):
         pip_data = self.request_pip(message['indices'])
         hashes = message['hashes']
-        if is_valid(pip_data, hashes):
+        if self.is_valid(pip_data, hashes):
             self.parent_actor.tell(pip_data)
         else:
             self.logger.warn('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
+            self.parent_actor.tell(empty_pip_message())
 
     def request_pip(self, indices):
         pip_request = pip_request_message(self.file_id, indices)
         self.logger.debug('requesting pip [%s]', pip_request)
-        return send_receive(pip_request, self.remote_address, self.timeout_sec)
+        return send_receive(pip_request, self.remote_address, 'pip-loader')
 
-
-def is_valid(pip_data, hashes):
-    pip_ix = int(pip_data['pip_ix'])
-    pip_hash = md5_hash(pip_data['data'])
-    return hashes[pip_ix] == pip_hash
+    def is_valid(self, pip_data, hashes):
+        pip_ix = int(pip_data['pip_ix'])
+        data_ = pip_data['data']
+        pip_hash = md5_hash(data_)
+        self.logger.debug('  expected hash [%s]-[%s]-[%s]', hashes[pip_ix])
+        self.logger.debug('calculated hash [%s]', pip_hash)
+        return hashes[pip_ix] == pip_hash

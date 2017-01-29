@@ -61,10 +61,14 @@ def decide_response(request):
     if command(request) == FILE_REQUEST:
         return TEST_FILE_INFO_RESPONSE
     if command(request) == PIP_REQUEST:
+        msg = next_message()
         if file_id_of(request) == TEST_FILE_ID:
-            return next_message()
-        else:
+            return msg
+        elif switcher['curr'] <= 1:
             return TEST_INVALID_PIP_RESPONSE
+        else:
+            sleep(TEST_WAIT)
+            return msg
 
 
 class FileRequestHandler(BaseRequestHandler):
@@ -100,7 +104,7 @@ class FileLoaderTest(LogTestCase):
 
     def start_file_loader(self, test_id=TEST_FILE_ID):
         file_message = missing_file_message('localhost', self.remote_fe_port, test_id)
-        FileLoader.start(self.share_dir, self.tmp_dir, file_message, self.parent_actor, TEST_TIMEOUT)
+        FileLoader.start(self.share_dir, self.tmp_dir, file_message, self.parent_actor)
         sleep(TEST_WAIT)
 
     def test_receive_file_request(self):
@@ -135,10 +139,14 @@ class FileLoaderTest(LogTestCase):
         with open(expected_file, 'r') as f:
             self.quickEquals(f.read(), PIP_1 + PIP_2 + PIP_3)
 
-    def test_reject_pip_with_wrong_hash(self):
+    def test_reject_and_resume_loading_pip_with_wrong_hash(self):
         self.start_file_loader(TEST_INVALID_FILE_ID)
         sleep(TEST_WAIT)
 
         expected_store = self.tmp_dir + '/' + md5_hash(TEST_INVALID_FILE_ID)
         with open(expected_store, 'r') as f:
             self.quickEquals(f.read(), PIP_FILLER + PIP_FILLER + PIP_FILLER)
+
+        sleep(TEST_WAIT * 2)
+        with open(expected_store, 'r') as f:
+            self.quickEquals(f.read(), PIP_FILLER + PIP_FILLER + PIP_3)

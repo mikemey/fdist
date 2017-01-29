@@ -9,6 +9,7 @@ CHUNK_SIZE = 8192
 FRAME_SEPARATOR = ":"
 
 recv_logger, send_logger = None, None
+logging.getLogger('network').setLevel(logging.DEBUG)
 
 
 def is_network_log_enabled(): return logging.getLogger('network').isEnabledFor(DEBUG)
@@ -16,7 +17,7 @@ def is_network_log_enabled(): return logging.getLogger('network').isEnabledFor(D
 
 if is_network_log_enabled():
     recv_logger = logging.getLogger('recv')
-    send_logger = logging.getLogger('send')
+    # send_logger = logging.getLogger('send')
 
 
 def send_log(src, msg, *args, **kwargs):
@@ -33,9 +34,11 @@ def send_data_to(sck, data, src=''):
     send_log(src, 'start')
 
     data = frame_data(src, data)
+    total_sent = 0
     while len(data) > 0:
         try:
             bytes_sent = sck.send(data)
+            total_sent += bytes_sent
             data = data[bytes_sent:]
         except socket.error as e:
             err = e.args[0]
@@ -46,7 +49,7 @@ def send_data_to(sck, data, src=''):
                 if is_network_log_enabled():
                     traceback.print_exc()
                 raise e
-    send_log(src, 'payload sent.')
+    send_log(src, 'payload sent [%s] bytes', total_sent)
 
 
 def frame_data(src, data):
@@ -60,7 +63,7 @@ def read_data_from(connection, src=''):
 
     def length_read(buf, chunk):
         if str(chunk) == FRAME_SEPARATOR:
-            recv_log(src, 'frame size [%s] bytes', len(buf))
+            recv_log(src, 'frame size [%s] bytes', buf)
             return buf, True
         buf += chunk
         return buf, None
@@ -70,7 +73,7 @@ def read_data_from(connection, src=''):
     def data_read(buf, chunk):
         buf += chunk
         if len(buf) >= frame_len:
-            recv_log(src, 'payload read.')
+            recv_log(src, 'payload read [%s] bytes', len(buf))
             return buf, True
         return buf, None
 
