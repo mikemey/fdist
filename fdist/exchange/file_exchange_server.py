@@ -52,7 +52,7 @@ class FileExchangeServer(LogActor):
 
 class FileExchangeRouter(LogActor):
     def __init__(self, local_dir, pip_size):
-        super(FileExchangeRouter, self).__init__(logging.DEBUG)
+        super(FileExchangeRouter, self).__init__(level=logging.DEBUG)
         self.info_actor = FileInfoServer.start(local_dir, pip_size)
         self.pip_actors = [PipServer.start(local_dir, pip_size) for _ in range(0, 4)]
         self.current_actor_ix = 0

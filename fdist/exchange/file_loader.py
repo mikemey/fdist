@@ -138,7 +138,7 @@ def pip_index(indices, hashes): return {
 
 class PipLoader(LogActor):
     def __init__(self, parent_actor, file_id, remote_address, timeout_sec):
-        super(PipLoader, self).__init__(logging.DEBUG)
+        super(PipLoader, self).__init__(level=logging.DEBUG)
 
         self.parent_actor = parent_actor
         self.file_id = file_id

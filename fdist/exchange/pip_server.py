@@ -10,7 +10,7 @@ from fdist.messages import pip_message, file_id_of
 
 class PipServer(LogActor):
     def __init__(self, local_dir, pip_size):
-        super(PipServer, self).__init__(logging.DEBUG)
+        super(PipServer, self).__init__(unique_name=True, level=logging.DEBUG)
         self.local_dir = local_dir
         self.pip_size = pip_size
 
