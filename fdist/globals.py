@@ -1,7 +1,7 @@
 import hashlib
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 BROADCAST_PORT = 18010
 BROADCAST_INTERVAL_SEC = 5
 
