@@ -17,7 +17,7 @@ def is_network_log_enabled(): return logging.getLogger('network').isEnabledFor(D
 
 if is_network_log_enabled():
     recv_logger = logging.getLogger('recv')
-    # send_logger = logging.getLogger('send')
+    send_logger = logging.getLogger('send')
 
 
 def send_log(src, msg, *args, **kwargs):

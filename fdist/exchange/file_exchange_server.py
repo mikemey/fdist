@@ -62,7 +62,7 @@ class FileExchangeRouter(LogActor):
         ip = connection_message['ip']
 
         self.logger.debug('reading request...')
-        data = read_data_from(connection, 'file-exchange-server')
+        data = read_data_from(connection, 'file-exchange-router')
         request_message = json.loads(data)
         accept_message = accept_connection_message(connection, ip, request_message)
 
