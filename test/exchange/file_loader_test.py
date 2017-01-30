@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import tempfile
@@ -73,12 +72,11 @@ def decide_response(request):
 
 class FileRequestHandler(BaseRequestHandler):
     def handle(self):
-        data = read_data_from(self.request, 'test-file-loader')
-        request = json.loads(data)
+        request = read_data_from(self.request, 'test-file-loader')
         self.server.data_records.append(request)
 
         response_message = decide_response(request)
-        send_data_to(self.request, json.dumps(response_message), 'test-file-loader')
+        send_data_to(self.request, response_message, 'test-file-loader')
 
 
 class FileRequestServer(MockServer):

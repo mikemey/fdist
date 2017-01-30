@@ -1,4 +1,3 @@
-import json
 import logging
 import socket
 from unittest import TestCase
@@ -50,8 +49,8 @@ def send_request_to(address, request_message):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect(address)
-        send_data_to(sock, json.dumps(request_message), 'test-helper')
-        return json.loads(read_data_from(sock, 'test-helper'))
+        send_data_to(sock, request_message, 'test-helper')
+        return read_data_from(sock, 'test-helper')
     except StandardError as e:
         raise e
     finally:

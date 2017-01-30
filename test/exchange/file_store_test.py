@@ -42,8 +42,6 @@ class FileStoreTest(LogTestCase):
         self.quickEquals(io_error.exconly(), expected_message)
 
     def test_reserve_file_when_not_exists(self):
-        print os.listdir(self.temp_dir)
-
         self.assertTrue(os.path.isfile(self.full_file_path))
 
         self.assert_file_cache(FILLER_PIP * 3)
