@@ -77,15 +77,15 @@ def read_data_from(connection, src=''):
         buf += chunk
         return buf, None
 
-    frame_info = read_loop(src, connection, length_read, 1, '')
-    total_bytes_received = len(frame_info) + len(FRAME_SEPARATOR)
+    frame_length = read_loop(src, connection, length_read, 1, '')
+    total_bytes_received = frame_length + len(FRAME_SEPARATOR)
 
     def data_read(loop_data, chunk):
         uncompressed, read_counter, decompressor = loop_data
         read_counter += len(chunk)
 
         uncompressed += decompressor.decompress(chunk)
-        if read_counter >= frame_info:
+        if read_counter >= frame_length:
             recv_log(src, 'payload length [%s]', len(uncompressed))
             recv_log(src, 'payload hash [%s]', md5_hash(uncompressed))
             return (uncompressed, read_counter), True
