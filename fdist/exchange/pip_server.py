@@ -1,4 +1,3 @@
-import json
 import logging
 import random
 from io import FileIO
@@ -23,8 +22,8 @@ class PipServer(LogActor):
         self.logger.info("received pip request from %s : %s: %s pips missing.", ip, file_id, len(indices))
         try:
             pip_ix = random.choice(indices)
-            response = pip_message(pip_ix, self.data(file_id, pip_ix))
-            send_data_to(connection, json.dumps(response, ensure_ascii=False), 'pip-server')
+            pip_response = pip_message(pip_ix, self.data(file_id, pip_ix))
+            send_data_to(connection, pip_response, 'pip-server')
         finally:
             connection.close()
 

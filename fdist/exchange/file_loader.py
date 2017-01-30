@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -22,8 +21,8 @@ def send_receive(request, remote_address, src):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect(remote_address)
-        send_data_to(sock, json.dumps(request), src)
-        return json.loads(read_data_from(sock, src).decode(errors="ignore"))
+        send_data_to(sock, request)
+        return read_data_from(sock, src)
     finally:
         sock.close()
 

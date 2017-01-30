@@ -1,4 +1,3 @@
-import json
 import os
 from io import FileIO
 from math import ceil
@@ -25,7 +24,7 @@ class FileInfoServer(LogActor):
             file_id = file_id_of(request_message)
             hashes = self.hashes(file_id)
             info_response = file_info_message(file_id, self.pip_size, hashes)
-            send_data_to(connection, json.dumps(info_response), 'file-info-server')
+            send_data_to(connection, info_response, 'file-info-server')
         finally:
             connection.close()
 

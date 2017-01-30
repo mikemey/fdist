@@ -1,4 +1,3 @@
-import json
 import logging
 import socket
 from _socket import timeout
@@ -62,8 +61,7 @@ class FileExchangeRouter(LogActor):
         ip = connection_message['ip']
 
         self.logger.debug('reading request...')
-        data = read_data_from(connection, 'file-exchange-router')
-        request_message = json.loads(data)
+        request_message = read_data_from(connection, 'file-exchange-router')
         accept_message = accept_connection_message(connection, ip, request_message)
 
         cmd = command(request_message)

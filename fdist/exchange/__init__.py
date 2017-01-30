@@ -1,3 +1,4 @@
+import bz2
 import errno
 import logging
 import socket
@@ -11,7 +12,6 @@ CHUNK_SIZE = 8192
 FRAME_SEPARATOR = ":"
 
 recv_logger, send_logger = None, None
-logging.getLogger('network').setLevel(logging.DEBUG)
 
 
 def is_network_log_enabled(): return logging.getLogger('network').isEnabledFor(DEBUG)
@@ -35,14 +35,15 @@ def recv_log(src, msg, *args, **kwargs):
 def send_data_to(sck, data, src=''):
     send_log(src, 'start')
 
-    recv_log(src, 'payload hash [%s]', md5_hash(data))
-    data = frame_data(src, data)
-    total_sent = 0
-    while len(data) > 0:
+    send_log(src, 'payload length [%s]', len(data))
+    send_log(src, 'payload hash [%s]', md5_hash(data))
+    frame = create_frame(src, data)
+    total_bytes_sent = 0
+    while len(frame) > 0:
         try:
-            bytes_sent = sck.send(data)
-            total_sent += bytes_sent
-            data = data[bytes_sent:]
+            bytes_sent = sck.send(frame)
+            total_bytes_sent += bytes_sent
+            frame = frame[bytes_sent:]
         except socket.error as e:
             err = e.args[0]
             if err == errno.EAGAIN:
@@ -52,46 +53,56 @@ def send_data_to(sck, data, src=''):
                 if is_network_log_enabled():
                     traceback.print_exc()
                 raise e
-    send_log(src, 'payload sent [%s] bytes', total_sent)
+    send_log(src, 'total sent [%s] bytes', total_bytes_sent)
 
 
-def frame_data(src, data):
-    frame_len = str(len(data))
-    send_log(src, 'framing %6s bytes', frame_len)
-    return frame_len + FRAME_SEPARATOR + data
+def create_frame(src, data):
+    compressed = bz2.compress(data)
+    frame_len = str(len(compressed))
+    send_log(src, 'compressed frame size [%s] bytes', frame_len)
+    return frame_len + FRAME_SEPARATOR + compressed
 
 
 def read_data_from(connection, src=''):
     recv_log(src, 'start')
 
-    def length_read(buf, chunk):
+    def length_read(loop_data, chunk):
+        buf = loop_data
+
         if str(chunk) == FRAME_SEPARATOR:
-            recv_log(src, 'frame size [%s] bytes', buf)
-            return buf, True
+            recv_log(src, 'compressed frame size [%s] bytes', buf)
+            return long(buf), True
         buf += chunk
         return buf, None
 
-    frame_len = long(read_loop(src, connection, length_read, 1))
+    frame_info = read_loop(src, connection, length_read, 1, '')
+    total_bytes_received = len(frame_info) + len(FRAME_SEPARATOR)
 
-    def data_read(buf, chunk):
-        buf += chunk
-        if len(buf) >= frame_len:
-            recv_log(src, 'payload read [%s] bytes', len(buf))
-            recv_log(src, 'payload hash [%s]', md5_hash(buf))
-            return buf, True
-        return buf, None
+    def data_read(loop_data, chunk):
+        uncompressed, read_counter, decompressor = loop_data
+        read_counter += len(chunk)
 
-    return read_loop(src, connection, data_read, CHUNK_SIZE)
+        uncompressed += decompressor.decompress(chunk)
+        if read_counter >= frame_info:
+            recv_log(src, 'payload length [%s]', len(uncompressed))
+            recv_log(src, 'payload hash [%s]', md5_hash(uncompressed))
+            return (uncompressed, read_counter), True
+        return (uncompressed, read_counter, decompressor), None
+
+    frame_data, bytes_received = read_loop(src, connection, data_read, CHUNK_SIZE, ('', 0, bz2.BZ2Decompressor()))
+    total_bytes_received += bytes_received
+    send_log(src, 'total recv [%s] bytes', total_bytes_received)
+    return frame_data
 
 
-def read_loop(src, connection, read_func, buffersize):
-    buf = ''
+def read_loop(src, connection, read_func, buffersize, loop_data):
     while True:
         try:
             chunk = connection.recv(buffersize)
-            buf, done = read_func(buf, chunk)
+
+            loop_data, done = read_func(loop_data, chunk)
             if done:
-                return buf
+                return loop_data
         except socket.error as e:
             err = e.args[0]
             if err == errno.EAGAIN:
