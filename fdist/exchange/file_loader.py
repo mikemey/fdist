@@ -160,8 +160,10 @@ class PipLoader(LogActor):
 
     def is_valid(self, pip_data, hashes):
         pip_ix = int(pip_data['pip_ix'])
-        data_ = pip_data['data']
-        pip_hash = md5_hash(data_)
-        self.logger.debug('  expected hash [%s]', hashes[pip_ix])
-        self.logger.debug('calculated hash [%s]', pip_hash)
-        return hashes[pip_ix] == pip_hash
+        pip_hash = md5_hash(pip_data['data'])
+
+        is_valid = hashes[pip_ix] == pip_hash
+        if not is_valid:
+            self.logger.warn('  expected hash [%s]', hashes[pip_ix])
+            self.logger.warn('calculated hash [%s]', pip_hash)
+        return is_valid

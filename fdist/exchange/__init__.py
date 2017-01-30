@@ -36,9 +36,10 @@ def recv_log(src, msg, *args, **kwargs):
 def send_data_to(sck, data, src=''):
     send_log(src, 'start')
     payload = cPickle.dumps(data)
+    if is_network_log_enabled():
+        send_log(src, 'payload length [%s]', len(payload))
+        send_log(src, 'payload hash [%s]', md5_hash(payload))
 
-    send_log(src, 'payload length [%s]', len(payload))
-    send_log(src, 'payload hash [%s]', md5_hash(payload))
     frame = create_frame(src, payload)
     total_bytes_sent = 0
     while len(frame) > 0:
@@ -86,12 +87,13 @@ def read_data_from(connection, src=''):
 
         uncompressed += decompressor.decompress(chunk)
         if read_counter >= frame_length:
-            recv_log(src, 'payload length [%s]', len(uncompressed))
-            recv_log(src, 'payload hash [%s]', md5_hash(uncompressed))
+            if is_network_log_enabled():
+                recv_log(src, 'payload length [%s]', len(uncompressed))
+                recv_log(src, 'payload hash [%s]', md5_hash(uncompressed))
             return (uncompressed, read_counter), True
         return (uncompressed, read_counter, decompressor), None
 
-    frame_data, bytes_received = read_loop(src, connection, data_read, CHUNK_SIZE, ('', 0, bz2.BZ2Decompressor()))
+    frame_data, bytes_received = read_loop(src, connection, data_read, CHUNK_SIZE, (b'', 0, bz2.BZ2Decompressor()))
     total_bytes_received += bytes_received
     send_log(src, 'total recv [%s] bytes', total_bytes_received)
     return cPickle.loads(frame_data)
