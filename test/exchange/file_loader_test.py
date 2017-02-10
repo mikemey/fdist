@@ -10,7 +10,7 @@ from pykka.registry import ActorRegistry
 
 from fdist.exchange import send_data_to, read_data_from
 from fdist.exchange.file_loader import FileLoader
-from fdist.globals import md5_hash
+from fdist.globals import hashed_file_path
 from fdist.messages import *
 from test.helpers import LogTestCase, free_port
 from test.mock_socket import MockServer
@@ -88,7 +88,6 @@ class FileLoaderTest(LogTestCase):
     def setUp(self):
         self.remote_fe_port = free_port()
         self.share_dir = tempfile.mkdtemp()
-        self.tmp_dir = tempfile.mkdtemp()
         self.mocked_server = FileRequestServer(self.remote_fe_port)
 
         self.parent_actor = MagicMock(spec=ActorRef)
@@ -98,11 +97,10 @@ class FileLoaderTest(LogTestCase):
         self.mocked_server.stop()
         ActorRegistry.stop_all()
         shutil.rmtree(self.share_dir)
-        shutil.rmtree(self.tmp_dir)
 
     def start_file_loader(self, test_id=TEST_FILE_ID):
         file_message = missing_file_message('localhost', self.remote_fe_port, test_id)
-        FileLoader.start(self.share_dir, self.tmp_dir, file_message, self.parent_actor)
+        FileLoader.start(self.share_dir, file_message, self.parent_actor)
         sleep(TEST_WAIT)
 
     def test_receive_file_request(self):
@@ -118,9 +116,9 @@ class FileLoaderTest(LogTestCase):
 
         self.parent_actor.tell.assert_called_once_with(load_failed_message(TEST_FILE_ID))
 
-    def test_creates_file_store(self):
-        self.start_file_loader(TEST_FILE_ID)
-        expected_store = self.tmp_dir + '/' + md5_hash(TEST_FILE_ID)
+    def test_creates_hashed_file_store(self):
+        self.start_file_loader()
+        expected_store = hashed_file_path(self.share_dir, TEST_FILE_ID)
         self.assertTrue(os.path.exists(expected_store))
 
     def test_store_all_pips(self):
@@ -141,7 +139,7 @@ class FileLoaderTest(LogTestCase):
         self.start_file_loader(TEST_INVALID_FILE_ID)
         sleep(TEST_WAIT)
 
-        expected_store = self.tmp_dir + '/' + md5_hash(TEST_INVALID_FILE_ID)
+        expected_store = hashed_file_path(self.share_dir, TEST_INVALID_FILE_ID)
         with open(expected_store, 'r') as f:
             self.quickEquals(f.read(), PIP_FILLER + PIP_FILLER + PIP_FILLER)
 

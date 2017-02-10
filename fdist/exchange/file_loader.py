@@ -7,14 +7,14 @@ from time import sleep
 
 from fdist.exchange import read_data_from, send_data_to
 from fdist.exchange.file_store import FileStore
-from fdist.globals import TMP_DIR, SHARE_DIR, md5_hash
+from fdist.globals import SHARE_DIR, md5_hash, hashed_file_path
 from fdist.log_actor import LogActor
 from fdist.messages import SELF_POKE, file_request_message, load_failed_message, file_id_of, pip_request_message, \
     command, PIP_DATA, empty_pip_message, EMPTY_PIP_DATA
 
 
 def create_file_loader(missing_file_message, parent_actor):
-    return FileLoader.start(SHARE_DIR, TMP_DIR, missing_file_message, parent_actor)
+    return FileLoader.start(SHARE_DIR, missing_file_message, parent_actor)
 
 
 def send_receive(request, remote_address, src):
@@ -28,7 +28,7 @@ def send_receive(request, remote_address, src):
 
 
 class FileLoader(LogActor):
-    def __init__(self, share_dir, tmp_dir, missing_file_message, parent_actor):
+    def __init__(self, share_dir, missing_file_message, parent_actor):
         super(FileLoader, self).__init__()
 
         self.missing_file_id = file_id_of(missing_file_message)
@@ -37,9 +37,8 @@ class FileLoader(LogActor):
 
         self.parent = parent_actor
         self.share_dir = share_dir
-        self.tmp_dir = tmp_dir
 
-        self.cache_file_name = self.tmp_dir + "/" + md5_hash(self.missing_file_id)
+        self.cache_file_name = hashed_file_path(self.share_dir, self.missing_file_id)
         self.file_store_actor = None
         self.pip_loader_actor = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address)
         self.hashes = []
@@ -50,7 +49,7 @@ class FileLoader(LogActor):
 
         file_info_message = self.request_file_info()
         if file_info_message:
-            self.file_store_actor = FileStore.start(self.tmp_dir, file_info_message, self.cache_file_name)
+            self.file_store_actor = FileStore.start(file_info_message, self.cache_file_name)
             self.hashes = file_info_message['hashes']
             self.indices = [i for i in range(0, len(self.hashes))]
 
@@ -77,15 +76,16 @@ class FileLoader(LogActor):
 
             if command(message) == PIP_DATA:
                 pip_ix = int(message['pip_ix'])
-                if pip_ix not in self.indices:
-                    self.logger.warn('duplicate pip received, index [%s]', pip_ix)
-                else:
+                if pip_ix in self.indices:
                     self.file_store_actor.tell(message)
                     self.indices.remove(pip_ix)
-                    if len(self.indices) > 0:
-                        self.request_pip()
-                    else:
-                        self.handle_success()
+                else:
+                    self.logger.warn('duplicate pip received, index [%s]', pip_ix)
+
+                if len(self.indices) > 0:
+                    self.request_pip()
+                else:
+                    self.handle_success()
 
         except StandardError as _error:
             self.handle_error(_error)
@@ -106,18 +106,18 @@ class FileLoader(LogActor):
             self.logger.debug('waiting for file store to finish...')
             sleep(1)
 
-        file_id = self.missing_file_id
-        last_slash_ix = file_id.rfind('/')
+        self.move_cache_to_file()
+        self.stop()
 
-        src = self.cache_file_name
-        dest_folder = self.share_dir + file_id[:last_slash_ix]
-        dest = self.share_dir + file_id
+    def move_cache_to_file(self):
+        last_slash_ix = self.missing_file_id.rfind('/')
+        dest_folder = self.share_dir + self.missing_file_id[:last_slash_ix]
+        dest = self.share_dir + self.missing_file_id
 
         self.logger.debug('moving file to [%s]', dest)
         if not os.path.exists(dest_folder):
             os.makedirs(dest_folder)
-        shutil.move(src, dest)
-        self.stop()
+        shutil.move(self.cache_file_name, dest)
 
     def ensure_pip_loader_alive(self):
         if not self.pip_loader_actor.is_alive():

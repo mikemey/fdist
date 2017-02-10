@@ -7,26 +7,26 @@ from fdist.messages import command, PIP_DATA
 
 
 class FileStore(LogActor):
-    def __init__(self, temp_dir, file_info_message, file_name):
+    def __init__(self, file_info_message, file_name):
         super(FileStore, self).__init__(level=logging.DEBUG)
 
-        self.temp_dir = temp_dir
         self.file_name = file_name
-        self.file_info = file_info_message
 
-    def pip_default_length(self):
-        return int(self.file_info['pip_length'])
-
-    def pip_count(self):
-        return len(self.file_info['hashes'])
+        self.pip_default_length = int(file_info_message['pip_length'])
+        self.pip_count = len(file_info_message['hashes'])
 
     def on_start(self):
         super(FileStore, self).on_start()
         if not os.path.isfile(self.file_name):
             self.logger.debug('reserving cache file [%s]', self.file_name)
+
+            file_dir = os.path.dirname(self.file_name)
+            if not os.path.isdir(file_dir):
+                os.makedirs(file_dir)
+
             with FileIO(self.file_name, 'w') as f:
-                empty = bytes('X' * self.pip_default_length())
-                for i in range(0, self.pip_count()):
+                empty = bytes('X' * self.pip_default_length)
+                for i in range(0, self.pip_count):
                     f.write(empty)
             self.logger.debug('reserving cache file done.')
         else:
@@ -42,22 +42,22 @@ class FileStore(LogActor):
             self.write_pip(pips_ix, pip_data)
 
     def check_pip(self, ix, data):
-        if ix < 0 or ix >= self.pip_count():
-            raise IOError('Pip index out of bounds [%s] range: 0 and %s' % (ix, self.pip_count()))
+        if ix < 0 or ix >= self.pip_count:
+            raise IOError('Pip index out of bounds [%s] range: 0 and %s' % (ix, self.pip_count))
 
         data_len = len(data)
-        if data_len != self.pip_default_length():
-            is_last_pip = ix == (self.pip_count() - 1)
-            pip_too_short = data_len < self.pip_default_length()
+        if data_len != self.pip_default_length:
+            is_last_pip = ix == (self.pip_count - 1)
+            pip_too_short = data_len < self.pip_default_length
             if not (is_last_pip and pip_too_short):
-                raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_default_length(), len(data)))
+                raise IOError('Pip length has to be [%s]: actual: [%s]' % (self.pip_default_length, len(data)))
 
     def write_pip(self, ix, data):
         with FileIO(self.file_name, 'r+') as f:
-            offset = ix * self.pip_default_length()
+            offset = ix * self.pip_default_length
             f.seek(offset)
             f.write(data)
 
-            is_last_pip = ix == self.pip_count() - 1
+            is_last_pip = ix == self.pip_count - 1
             if is_last_pip:
                 f.truncate()

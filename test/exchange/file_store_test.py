@@ -25,7 +25,7 @@ class FileStoreTest(LogTestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.full_file_path = self.temp_dir + "/store.test"
 
-        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO, self.full_file_path)
+        self.file_store = FileStore.start(TEST_FILE_INFO, self.full_file_path)
         sleep(0.3)
 
     def tearDown(self):
@@ -52,7 +52,7 @@ class FileStoreTest(LogTestCase):
             f.seek(0)
             f.write(PIP_1)
 
-        self.file_store = FileStore.start(self.temp_dir, TEST_FILE_INFO, self.full_file_path)
+        self.file_store = FileStore.start(TEST_FILE_INFO, self.full_file_path)
         self.assert_file_cache(PIP_1 + FILLER_PIP * 2)
 
     def test_pip_length_too_long(self):

@@ -16,7 +16,6 @@ MISSING_MESSAGE = missing_file_message('333.333.333.333', 999999, TEST_FILE)
 
 class FileMasterTest(LogTestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
         self.create_file_loader = MagicMock()
         self.file_master = FileMaster.start(self.create_file_loader)
 

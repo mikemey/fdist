@@ -17,17 +17,17 @@ TEST_WAIT = TEST_RELOAD_LOCAL_FILES_SEC * 2
 
 class LocalFilesTest(LogTestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
+        self.tmp_share_dir = tempfile.mkdtemp()
         self.receiver = MagicMock(spec=ActorRef)
-        self.lfs = LocalFiles.start([self.receiver], self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
+        self.lfs = LocalFiles.start([self.receiver], self.tmp_share_dir, TEST_RELOAD_LOCAL_FILES_SEC)
 
     def tearDown(self):
         ActorRegistry.stop_all()
-        shutil.rmtree(self.tmpdir)
+        shutil.rmtree(self.tmp_share_dir)
 
     def addFiles(self, filenames):
         for filename in filenames:
-            with open(self.tmpdir + filename, "w") as f:
+            with open(self.tmp_share_dir + filename, "w") as f:
                 f.write("FOOBAR")
 
     def test_add_files_in_folder(self):
@@ -41,7 +41,7 @@ class LocalFilesTest(LogTestCase):
         first_receiver = MagicMock(spec=ActorRef)
         second_receiver = MagicMock(spec=ActorRef)
         self.lfs = LocalFiles.start([first_receiver, second_receiver],
-                                    self.tmpdir, TEST_RELOAD_LOCAL_FILES_SEC)
+                                    self.tmp_share_dir, TEST_RELOAD_LOCAL_FILES_SEC)
 
         new_files = ['/some_file_test1.txt']
         self.addFiles(new_files)
@@ -58,7 +58,7 @@ class LocalFilesTest(LogTestCase):
         self.receiver.tell.assert_not_called()
 
     def test_report_files_in_subdirectory(self):
-        os.makedirs(self.tmpdir + "/sub_dir")
+        os.makedirs(self.tmp_share_dir + "/sub_dir")
         new_files = ['/sub_dir/sub_file']
         self.addFiles(new_files)
         sleep(TEST_WAIT)
@@ -66,20 +66,20 @@ class LocalFilesTest(LogTestCase):
         self.receiver.tell.assert_called_once_with(local_files_message(new_files))
 
     def test_dont_report_empty_subdirectory(self):
-        os.makedirs(self.tmpdir + "/empty_dir")
+        os.makedirs(self.tmp_share_dir + "/empty_dir")
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_not_called()
 
     def test_dont_report_hidden_files_in_subdirectory(self):
-        os.makedirs(self.tmpdir + "/sub_dir")
+        os.makedirs(self.tmp_share_dir + "/sub_dir")
         self.addFiles(["/sub_dir/.hidden_file"])
         sleep(TEST_WAIT)
 
         self.receiver.tell.assert_not_called()
 
     def test_dont_report_hidden_directories(self):
-        os.makedirs(self.tmpdir + "/.sub_dir")
+        os.makedirs(self.tmp_share_dir + "/.sub_dir")
         new_files = ['/.sub_dir/sub_file']
         self.addFiles(new_files)
         sleep(TEST_WAIT)

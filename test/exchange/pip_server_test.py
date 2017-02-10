@@ -17,12 +17,12 @@ class PipServerTest(LogTestCase):
     def setUp(self):
         fe_port = free_port()
         self.address = ('localhost', fe_port)
-        self.tmpdir = tempfile.mkdtemp()
+        self.tmp_share_dir = tempfile.mkdtemp()
         self.fe_port = fe_port
 
     def tearDown(self):
         ActorRegistry.stop_all()
-        shutil.rmtree(self.tmpdir)
+        shutil.rmtree(self.tmp_share_dir)
 
     def test_respond_with_first_pip(self):
         completed = [0, 1]
@@ -33,9 +33,9 @@ class PipServerTest(LogTestCase):
         self.assert_pip_response(completed, {2}, {PIP_3})
 
     def assert_pip_response(self, required_indices, expected_ixs, expected_datas):
-        FileExchangeServer.start(self.fe_port, self.tmpdir, TEST_PIP_SIZE)
+        FileExchangeServer.start(self.fe_port, self.tmp_share_dir, TEST_PIP_SIZE)
         file_id = '/pip.test'
-        with open(self.tmpdir + file_id, "w") as f:
+        with open(self.tmp_share_dir + file_id, "w") as f:
             f.write(PIP_1 + PIP_2 + PIP_3)
 
         pip_request = pip_request_message(file_id, required_indices)
@@ -54,11 +54,11 @@ class PipServerTest(LogTestCase):
         mega = 1024 * 1024
         one_meg = 'A' * mega
         pips_count = 500
-        with open(self.tmpdir + file_id, "w") as f:
+        with open(self.tmp_share_dir + file_id, "w") as f:
             for _ in range(0, pips_count):
                 f.write(one_meg)
 
-        FileExchangeServer.start(self.fe_port, self.tmpdir, mega)
+        FileExchangeServer.start(self.fe_port, self.tmp_share_dir, mega)
 
         required_indices = [i for i in range(0, pips_count)]
         pip_request = pip_request_message(file_id, required_indices)
