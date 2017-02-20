@@ -28,6 +28,6 @@ class PipServer(LogActor):
             connection.close()
 
     def data(self, file_id, pip_ix):
-        with FileIO(self.local_dir + file_id, 'r+') as fin:
+        with FileIO(self.local_dir + file_id, 'r') as fin:
             fin.seek(pip_ix * self.pip_size)
             return fin.read(self.pip_size)

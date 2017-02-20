@@ -42,7 +42,7 @@ class FileInfoServer(LogActor):
 
     def calculate_hash(self, full_path):
         hashes = []
-        with FileIO(full_path, 'r+') as fin:
+        with FileIO(full_path, 'r') as fin:
             pip = fin.read(self.pip_size)
             while pip:
                 pip_hash = md5_hash(pip)
