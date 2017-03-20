@@ -145,13 +145,15 @@ class PipLoader(LogActor):
         self.remote_address = remote_address
 
     def on_receive(self, message):
-        pip_data = self.request_pip(message['indices'])
-        hashes = message['hashes']
-        if self.is_valid(pip_data, hashes):
-            self.parent_actor.tell(pip_data)
-        else:
-            self.logger.warn('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
-            self.parent_actor.tell(empty_pip_message())
+        try:
+            pip_data = self.request_pip(message['indices'])
+            hashes = message['hashes']
+            if self.is_valid(pip_data, hashes):
+                self.parent_actor.tell(pip_data)
+            else:
+                self.handle_error('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
+        except StandardError as e:
+            self.handle_error('error during file load: %s', e.message)
 
     def request_pip(self, indices):
         pip_request = pip_request_message(self.file_id, indices)
@@ -167,3 +169,7 @@ class PipLoader(LogActor):
             self.logger.warn('  expected hash [%s]', hashes[pip_ix])
             self.logger.warn('calculated hash [%s]', pip_hash)
         return is_valid
+
+    def handle_error(self, msg, *args):
+        self.logger.warn(msg, args)
+        self.parent_actor.tell(empty_pip_message())
