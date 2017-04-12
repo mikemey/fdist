@@ -40,7 +40,8 @@ class FileLoader(LogActor):
 
         self.cache_file_name = hashed_file_path(self.share_dir, self.missing_file_id)
         self.file_store_actor = None
-        self.pip_loader_actor = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address)
+        # self.pip_loader_actor = [PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address)
+        #                          for _ in range(0, 4)]
         self.hashes = []
         self.indices = []
 
@@ -66,7 +67,7 @@ class FileLoader(LogActor):
 
     def on_receive(self, message):
         try:
-            self.ensure_pip_loader_alive()
+            # self.ensure_pip_loader_alive()
             if message is SELF_POKE:
                 sleep(1)
                 self.actor_ref.tell(SELF_POKE)
@@ -92,13 +93,15 @@ class FileLoader(LogActor):
 
     def on_stop(self):
         super(FileLoader, self).on_stop()
-        if self.pip_loader_actor.is_alive():
-            self.pip_loader_actor.stop()
+        # if self.pip_loader_actor.is_alive():
+        #     self.pip_loader_actor.stop()
         if self.file_store_actor and self.file_store_actor.is_alive():
             self.file_store_actor.stop()
 
     def request_pip(self):
-        self.pip_loader_actor.tell(pip_index(self.indices, self.hashes))
+        # self.pip_loader_actor.tell(pip_index(self.indices, self.hashes))
+        pip_loader = PipLoader.start(self.actor_ref, self.missing_file_id, self.remote_address)
+        pip_loader.tell(pip_index(self.indices, self.hashes))
 
     def handle_success(self):
         self.file_store_actor.stop()
@@ -119,9 +122,9 @@ class FileLoader(LogActor):
             os.makedirs(dest_folder)
         shutil.move(self.cache_file_name, dest)
 
-    def ensure_pip_loader_alive(self):
-        if not self.pip_loader_actor.is_alive():
-            self.handle_error('pip loader error.')
+    # def ensure_pip_loader_alive(self):
+    #     if not self.pip_loader_actor.is_alive():
+    #         self.handle_error('pip loader error.')
 
     def handle_error(self, description):
         self.logger.error("failed: %s", description)
@@ -154,6 +157,8 @@ class PipLoader(LogActor):
                 self.handle_error('pip hash mismatch, pip-index: %s', pip_data['pip_ix'])
         except StandardError as e:
             self.handle_error('error during file load: %s', e.message)
+        finally:
+            self.stop()
 
     def request_pip(self, indices):
         pip_request = pip_request_message(self.file_id, indices)

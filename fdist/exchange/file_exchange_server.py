@@ -52,7 +52,9 @@ class FileExchangeServer(LogActor):
 class FileExchangeRouter(LogActor):
     def __init__(self, local_dir, pip_size):
         super(FileExchangeRouter, self).__init__(level=logging.DEBUG)
-        self.info_actor = FileInfoServer.start(local_dir, pip_size)
+        self.local_dir = local_dir
+        self.pip_size = pip_size
+        self.info_actor = FileInfoServer.start(self.local_dir, self.pip_size)
         self.pip_actors = [PipServer.start(local_dir, pip_size) for _ in range(0, 4)]
         self.current_actor_ix = 0
 
@@ -69,9 +71,9 @@ class FileExchangeRouter(LogActor):
         if cmd == FILE_REQUEST:
             self.info_actor.tell(accept_message)
         elif cmd == PIP_REQUEST:
-            actor_ref = self.pip_actors[self.current_actor_ix]
-            self.update_actor_index()
+            actor_ref = PipServer.start(self.local_dir, self.pip_size)
+            # self.update_actor_index()
             actor_ref.tell(accept_message)
 
-    def update_actor_index(self):
-        self.current_actor_ix = (self.current_actor_ix + 1) % len(self.pip_actors)
+    # def update_actor_index(self):
+    #     self.current_actor_ix = (self.current_actor_ix + 1) % len(self.pip_actors)

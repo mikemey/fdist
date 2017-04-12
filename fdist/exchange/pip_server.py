@@ -26,6 +26,7 @@ class PipServer(LogActor):
             send_data_to(connection, pip_response, 'pip-server')
         finally:
             connection.close()
+            self.stop()
 
     def data(self, file_id, pip_ix):
         with FileIO(self.local_dir + file_id, 'r') as fin:
