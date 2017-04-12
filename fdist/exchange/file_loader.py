@@ -54,7 +54,7 @@ class FileLoader(LogActor):
             self.hashes = file_info_message['hashes']
             self.indices = [i for i in range(0, len(self.hashes))]
 
-            self.request_pip()
+            [self.request_pip() for _ in range(0, 4)]
             self.actor_ref.tell(SELF_POKE)
 
     def request_file_info(self):
@@ -68,9 +68,9 @@ class FileLoader(LogActor):
     def on_receive(self, message):
         try:
             # self.ensure_pip_loader_alive()
-            if message is SELF_POKE:
-                sleep(1)
-                self.actor_ref.tell(SELF_POKE)
+            # if message is SELF_POKE:
+            #     sleep(1)
+            #     self.actor_ref.tell(SELF_POKE)
 
             if command(message) == EMPTY_PIP_DATA:
                 self.request_pip()
